@@ -1,0 +1,18 @@
+{
+    "name": "trayex",
+    "private": true,
+    "scripts": {
+        "dev": "concurrently \"cd trayex-backend && npm run dev\" \"cd trayex-frontend && npm run dev\""
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.1.14",
+        "autoprefixer": "^10.4.21",
+        "concurrently": "^8.2.2",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^3.4.18",
+        "tailwindcss-animate": "^1.0.7"
+    },
+    "dependencies": {
+        "lucide-react": "^0.545.0"
+    }
+}

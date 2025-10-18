@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Trayex API (MVP)
+  version: 0.1.0
+servers:
+  - url: http://localhost:4000
+paths:
+  /health:
+    get:
+      summary: Healthcheck
+      responses:
+        '200': { description: OK }
+  /auth/otp:
+    post:
+      summary: Solicitar OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { type: string }
+                email: { type: string }
+      responses:
+        '200': { description: OK }
+  /auth/verify:
+    post:
+      summary: Verificar OTP y obtener token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: { type: string }
+                phone: { type: string }
+                email: { type: string }
+      responses:
+        '200':
+          description: Token emitido
+  /zones:
+    get:
+      summary: Listar zonas
+      responses: { '200': { description: OK } }
+  /stops:
+    get:
+      summary: Listar paradas por zona
+      parameters:
+        - in: query
+          name: zone
+          schema: { type: string }
+      responses: { '200': { description: OK } }
+  /timeslots:
+    get:
+      summary: Listar franjas (por zona y fecha)
+      parameters:
+        - in: query
+          name: zone
+          schema: { type: string }
+        - in: query
+          name: date
+          schema: { type: string, format: date }
+      responses: { '200': { description: OK } }
+  /reservations:
+    post:
+      summary: Crear reserva por franja y parada
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [timeslotId, stopId]
+              properties:
+                timeslotId: { type: string }
+                stopId: { type: string }
+      responses: { '201': { description: Creada } }
+  /reservations/me:
+    get:
+      summary: Mis reservas
+      responses: { '200': { description: OK } }
+  /tickets/{reservationId}/qr:
+    get:
+      summary: Obtener QR offline firmado
+      parameters:
+        - in: path
+          name: reservationId
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: OK } }
+  /validate:
+    post:
+      summary: Validar QR (online, demo)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                qr: { type: string }
+      responses: { '200': { description: OK } }
+  /eta:
+    get:
+      summary: Obtener ETA de una franja
+      parameters:
+        - in: query
+          name: timeslotId
+          schema: { type: string }
+      responses: { '200': { description: OK } }
+  /sos:
+    post:
+      summary: Disparar SOS (demo)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lat: { type: number }
+                lng: { type: number }
+      responses: { '201': { description: Creado } }

@@ -2,7 +2,9 @@
     "name": "trayex",
     "private": true,
     "scripts": {
-        "dev": "concurrently \"cd trayex-backend && npm run dev\" \"cd trayex-frontend && npm run dev\""
+        "dev:back": "npm run dev --prefix trayex-backend",
+        "dev:front": "npm run dev --prefix trayex-front",
+        "dev": "concurrently \"npm run dev:back\" \"npm run dev:front\""
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.14",

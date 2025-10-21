@@ -10,7 +10,7 @@ import { ticketRouter } from './routes/tickets';
 import { etaRouter } from './routes/eta';
 import { sosRouter } from './routes/sos';
 import { errorHandler } from './middleware/error';
-
+import profileRouter from "./routes/profile"; 
 const app = express();
 const origins = (process.env.CORS_ORIGINS || '')
     .split(',')
@@ -28,6 +28,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 
 // routes
 app.use('/auth', authRouter);
+app.use("/", profileRouter);
 app.use('/', catalogRouter);
 app.use('/', reservationRouter);
 app.use('/', ticketRouter);

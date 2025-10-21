@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { WelcomeScreen } from "@/components/welcome-screen"
 import { LoginScreen } from "@/components/login-screen"
 import { RegisterStudentScreen } from "@/components/register-student-screen"
@@ -15,6 +15,20 @@ export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("welcome")
   const [userRole, setUserRole] = useState<UserRole>(null)
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false)
+
+  //Log para confirmar la API base desde .env.local
+  useEffect(() => {
+    console.log("API base URL:", process.env.NEXT_PUBLIC_API_BASE_URL)
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (token) {
+      // si ya estaba logueado, salta al dashboard
+      setHasSeenOnboarding(true)
+      setCurrentScreen("dashboard")
+    }
+  }, [])
 
   return (
     <main className="min-h-screen bg-background overflow-hidden">

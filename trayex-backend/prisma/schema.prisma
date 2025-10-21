@@ -37,7 +37,14 @@ model StudentProfile {
   universityId String?
   studentId    String?
   qrToken      String?
+  fullName     String? @map("fullname")
+  bloodType        String?
+  idNumber         String?
+  university       String?
+  emergencyName    String?
+  emergencyContact String?
 }
+
 
 enum Role {
   STUDENT

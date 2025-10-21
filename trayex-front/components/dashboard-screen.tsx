@@ -1,29 +1,59 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Home, Route, Ticket, Bell, User, MapPin, Clock, Users, QrCode, Navigation } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { RoutesScreen } from "@/components/routes-screen"
-import { PassScreen } from "@/components/pass-screen"
-import { TripInProgressScreen } from "@/components/trip-in-progress-screen"
-import { NotificationsScreen } from "@/components/notifications-screen"
-import { ProfileScreen } from "@/components/profile-screen"
-import type { UserRole } from "@/app/page"
+import { useState, useEffect, useMemo } from "react";
+import { Home, Route, Ticket, Bell, User, MapPin, Clock, Users, QrCode, Navigation, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { RoutesScreen } from "@/components/routes-screen";
+import { PassScreen } from "@/components/pass-screen";
+import { TripInProgressScreen } from "@/components/trip-in-progress-screen";
+import { NotificationsScreen } from "@/components/notifications-screen";
+import { ProfileScreen } from "@/components/profile-screen";
+import type { UserRole } from "@/app/page";
+
+import { getToken, getUser, saveUser, clearToken } from "@/lib/session";
+import { getMe } from "@/lib/api";
 
 type DashboardScreenProps = {
-  userRole: UserRole
-}
+  userRole: UserRole;
+};
 
-type NavItem = "home" | "routes" | "pass" | "notifications" | "profile"
+type NavItem = "home" | "routes" | "pass" | "notifications" | "profile";
 
 export function DashboardScreen({ userRole }: DashboardScreenProps) {
-  const [activeNav, setActiveNav] = useState<NavItem>("home")
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [tripInProgress, setTripInProgress] = useState<string | null>(null)
-  const [unreadCount, setUnreadCount] = useState(3)
+  const [activeNav, setActiveNav] = useState<NavItem>("home");
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [tripInProgress, setTripInProgress] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(3);
 
+  // ======== SESIÓN ========
+  const token = getToken();
+  const [user, setUser] = useState<any>(getUser()); // lo que haya en localStorage
+
+  useEffect(() => {
+    if (!token) return;
+    getMe(token)
+      .then((res) => {
+        if (res?.user) {
+          setUser(res.user);
+          saveUser(res.user);
+        }
+      })
+      .catch(() => {
+        // si falla, mantenemos lo que hubiese en localStorage
+      });
+  }, [token]);
+
+  const displayName = useMemo(() => {
+    // si tu backend expone student.fullName (o fullname mapeado a fullName)
+    const full = user?.student?.fullName || user?.student?.fullname;
+    if (full && typeof full === "string" && full.trim().length > 0) return full;
+    if (user?.email) return user.email;
+    return user?.role || userRole || "Usuario";
+  }, [user, userRole]);
+
+  // ======== GEO ========
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -31,43 +61,63 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
           setUserLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          })
+          });
         },
         (error) => {
-          console.log("[v0] Geolocation error:", error)
-          setUserLocation({ lat: -0.1807, lng: -78.4678 })
-        },
-      )
+          console.log("[v0] Geolocation error:", error);
+          setUserLocation({ lat: -0.1807, lng: -78.4678 });
+        }
+      );
     }
-  }, [])
+  }, []);
 
   const handleReserveRoute = (routeName: string) => {
-    setTripInProgress(routeName)
-  }
+    setTripInProgress(routeName);
+  };
 
   const handleEndTrip = () => {
-    setTripInProgress(null)
-    setActiveNav("home")
-  }
+    setTripInProgress(null);
+    setActiveNav("home");
+  };
 
   if (tripInProgress) {
-    return <TripInProgressScreen routeName={tripInProgress} onEndTrip={handleEndTrip} />
+    return <TripInProgressScreen routeName={tripInProgress} onEndTrip={handleEndTrip} />;
   }
 
   const renderContent = () => {
     switch (activeNav) {
       case "routes":
-        return <RoutesScreen onReserveRoute={handleReserveRoute} />
+        return <RoutesScreen onReserveRoute={handleReserveRoute} />;
       case "pass":
-        return <PassScreen />
+        return <PassScreen />;
       case "notifications":
-        return <NotificationsScreen onUpdateUnreadCount={setUnreadCount} />
+        return <NotificationsScreen onUpdateUnreadCount={setUnreadCount} />;
       case "profile":
-        return <ProfileScreen userRole={userRole} />
+        return <ProfileScreen userRole={userRole} />;
       case "home":
       default:
         return (
           <div className="flex-1 relative">
+            {/* HEADER con saludo + logout */}
+            <div className="flex items-center justify-between p-4">
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">Bienvenido</p>
+                <h2 className="text-lg font-semibold">{displayName}</h2>
+              </div>
+              <Button
+                variant="outline"
+                className="rounded-xl gap-2"
+                onClick={() => {
+                  clearToken();
+                  location.reload(); // simple reset; si prefieres, sube un callback al parent para cambiar screen
+                }}
+              >
+                <LogOut className="w-4 h-4" />
+                Salir
+              </Button>
+            </div>
+
+            {/* MAPA FAKE */}
             <div className="absolute inset-0 bg-muted">
               {userLocation ? (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
@@ -93,6 +143,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                 </div>
               )}
 
+              {/* marcadores de ejemplo */}
               <div className="absolute top-1/4 left-1/3 w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg animate-pulse">
                 <span className="text-primary-foreground text-xs font-bold">B1</span>
               </div>
@@ -105,6 +156,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               </div>
             </div>
 
+            {/* CARD inferior */}
             <div className="absolute bottom-20 left-0 right-0 p-4">
               <Card className="bg-card/95 backdrop-blur-lg border-2 rounded-3xl shadow-2xl p-5 space-y-4">
                 <div className="space-y-2">
@@ -119,7 +171,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                       </div>
                     </div>
                     <Badge variant="secondary" className="rounded-full">
-                      <Clock className="w-3 h-3 mr-1" />5 min
+                      <Clock className="w-3 h-3 mr-1" />
+                      5 min
                     </Badge>
                   </div>
                 </div>
@@ -141,7 +194,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                         12/40
                       </Badge>
                       <Badge variant="secondary" className="rounded-full">
-                        <Clock className="w-3 h-3 mr-1" />2 min
+                        <Clock className="w-3 h-3 mr-1" />
+                        2 min
                       </Badge>
                     </div>
                   </div>
@@ -157,9 +211,9 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               </Card>
             </div>
           </div>
-        )
+        );
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -169,9 +223,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
             onClick={() => setActiveNav("home")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${
-              activeNav === "home" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "home" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              }`}
           >
             <Home className="w-6 h-6" />
             <span className="text-xs font-medium">Inicio</span>
@@ -179,9 +232,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
 
           <button
             onClick={() => setActiveNav("routes")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${
-              activeNav === "routes" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "routes" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              }`}
           >
             <Route className="w-6 h-6" />
             <span className="text-xs font-medium">Rutas</span>
@@ -189,9 +241,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
 
           <button
             onClick={() => setActiveNav("pass")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${
-              activeNav === "pass" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "pass" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              }`}
           >
             <Ticket className="w-6 h-6" />
             <span className="text-xs font-medium">Pase</span>
@@ -199,9 +250,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
 
           <button
             onClick={() => setActiveNav("notifications")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors relative ${
-              activeNav === "notifications" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors relative ${activeNav === "notifications" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              }`}
           >
             <Bell className="w-6 h-6" />
             <span className="text-xs font-medium">Avisos</span>
@@ -214,9 +264,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
 
           <button
             onClick={() => setActiveNav("profile")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${
-              activeNav === "profile" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "profile" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              }`}
           >
             <User className="w-6 h-6" />
             <span className="text-xs font-medium">Perfil</span>
@@ -224,5 +273,5 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         </div>
       </nav>
     </div>
-  )
+  );
 }

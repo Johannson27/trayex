@@ -1,13 +1,12 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Bus, User, Mail, Lock, Phone, Droplet, CreditCard, Building2 } from "lucide-react"
+import { register, getMe } from "@/lib/api"
 
 interface RegisterStudentScreenProps {
   onBack: () => void
@@ -16,6 +15,9 @@ interface RegisterStudentScreenProps {
 
 export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScreenProps) {
   const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -28,19 +30,46 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
     emergencyName: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (step === 1) {
-      setStep(2)
-    } else {
-      // Handle registration
-      console.log("Register student:", formData)
-      onSuccess?.()
-    }
-  }
-
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setErr(null)
+
+    if (step === 1) {
+      // Validaciones de paso 1
+      if (!formData.fullName.trim()) return setErr("Ingresa tu nombre completo")
+      if (!formData.email) return setErr("Ingresa tu correo institucional")
+      if (formData.password.length < 8) return setErr("La contraseña debe tener al menos 8 caracteres")
+      if (formData.password !== formData.confirmPassword) return setErr("Las contraseñas no coinciden")
+
+      setStep(2)
+      return
+    }
+
+    // Paso 2: registrar en backend
+    setLoading(true)
+    try {
+      const { token } = await register(formData.email, formData.password, formData.fullName.trim())
+
+      // Dev rápido: token en localStorage (en prod → cookie HttpOnly)
+      localStorage.setItem("token", token)
+
+      try { await getMe(token) } catch { }
+
+      onSuccess?.() // tu page te lleva a Onboarding
+    } catch (e: any) {
+      const msg = e?.message ?? "No se pudo crear la cuenta"
+      if (msg.includes("registrado") || msg.toLowerCase().includes("already")) {
+        setErr("Este email ya está registrado")
+      } else {
+        setErr(msg)
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -61,16 +90,14 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
           </div>
           <h1 className="text-3xl font-bold text-primary-foreground">Registro Estudiante</h1>
         </div>
-        <p className="text-primary-foreground/80 ml-15">{step === 1 ? "Crea tu cuenta" : "Datos de emergencia"}</p>
+        <p className="text-primary-foreground/80 ml-15">
+          {step === 1 ? "Crea tu cuenta" : "Datos de emergencia"}
+        </p>
 
-        {/* Progress Indicator */}
+        {/* Progreso */}
         <div className="flex gap-2 mt-6">
-          <div
-            className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-primary-foreground" : "bg-primary-foreground/30"}`}
-          />
-          <div
-            className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-primary-foreground" : "bg-primary-foreground/30"}`}
-          />
+          <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-primary-foreground" : "bg-primary-foreground/30"}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-primary-foreground" : "bg-primary-foreground/30"}`} />
         </div>
       </div>
 
@@ -81,9 +108,7 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
             {step === 1 ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-sm font-medium">
-                    Nombre completo
-                  </Label>
+                  <Label htmlFor="fullName" className="text-sm font-medium">Nombre completo</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -99,9 +124,7 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">
-                    Correo institucional
-                  </Label>
+                  <Label htmlFor="email" className="text-sm font-medium">Correo institucional</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -117,9 +140,7 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Contraseña
-                  </Label>
+                  <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -135,9 +156,7 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium">
-                    Confirmar contraseña
-                  </Label>
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar contraseña</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -154,13 +173,16 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
               </>
             ) : (
               <>
+                {/* Estos campos aún no se guardan en DB; los mantenemos para UI.
+                    Si luego quieres persistirlos, añadimos columnas y endpoint. */}
                 <div className="space-y-2">
-                  <Label htmlFor="bloodType" className="text-sm font-medium">
-                    Tipo de sangre
-                  </Label>
+                  <Label htmlFor="bloodType" className="text-sm font-medium">Tipo de sangre</Label>
                   <div className="relative">
                     <Droplet className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                    <Select value={formData.bloodType} onValueChange={(value) => updateField("bloodType", value)}>
+                    <Select
+                      value={formData.bloodType}
+                      onValueChange={(value) => updateField("bloodType", value)}
+                    >
                       <SelectTrigger className="pl-11 h-14 rounded-2xl border-2 focus:border-primary">
                         <SelectValue placeholder="Selecciona tu tipo de sangre" />
                       </SelectTrigger>
@@ -179,9 +201,7 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="idNumber" className="text-sm font-medium">
-                    Cédula de identidad
-                  </Label>
+                  <Label htmlFor="idNumber" className="text-sm font-medium">Cédula de identidad</Label>
                   <div className="relative">
                     <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -197,9 +217,7 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="university" className="text-sm font-medium">
-                    Universidad
-                  </Label>
+                  <Label htmlFor="university" className="text-sm font-medium">Universidad</Label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -215,9 +233,7 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="emergencyName" className="text-sm font-medium">
-                    Nombre de contacto de emergencia
-                  </Label>
+                  <Label htmlFor="emergencyName" className="text-sm font-medium">Nombre de contacto de emergencia</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -233,15 +249,13 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="emergencyContact" className="text-sm font-medium">
-                    Teléfono de emergencia
-                  </Label>
+                  <Label htmlFor="emergencyContact" className="text-sm font-medium">Teléfono de emergencia</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="emergencyContact"
                       type="tel"
-                      placeholder="+593 99 123 4567"
+                      placeholder="+505 8888 8888"
                       value={formData.emergencyContact}
                       onChange={(e) => updateField("emergencyContact", e.target.value)}
                       className="pl-11 h-14 rounded-2xl border-2 focus:border-primary"
@@ -252,12 +266,19 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
               </>
             )}
 
+            {err && (
+              <div className="text-sm text-red-600 bg-red-100/70 rounded-xl p-3">
+                {err}
+              </div>
+            )}
+
             <Button
               type="submit"
               size="lg"
               className="w-full h-14 rounded-2xl text-lg font-semibold bg-primary hover:bg-primary/90"
+              disabled={loading}
             >
-              {step === 1 ? "Siguiente" : "Crear cuenta"}
+              {loading ? "Procesando..." : step === 1 ? "Siguiente" : "Crear cuenta"}
             </Button>
           </form>
         </div>

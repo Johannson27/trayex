@@ -67,6 +67,7 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
         localStorage.removeItem("remember_email");
       }
 
+      
       onSuccess?.();
     } catch (e: any) {
       const msg = e?.message ?? "Error al iniciar sesión";

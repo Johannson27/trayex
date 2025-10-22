@@ -1,36 +1,112 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { QrCode, Wallet, Clock, CreditCard, MapPin, TrendingUp, TrendingDown, Gift, Smartphone } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useState, useCallback } from "react";
+
+import dynamic from "next/dynamic";
+import type { QRCodeProps } from "react-qr-code";
+
+// 👇 Import estable para QRCode con Next.js + TS
+const QRCode = dynamic<QRCodeProps>(
+  () =>
+    Promise.resolve(
+      // forzamos a que el módulo sea tratado como default export
+      (props: QRCodeProps) => {
+        const QR = require("react-qr-code").default;
+        return <QR {...props} />;
+      }
+    ),
+  { ssr: false }
+);
+
+
+import {
+  QrCode as QrIcon,
+  Wallet,
+  Clock,
+  CreditCard,
+  MapPin,
+  TrendingUp,
+  TrendingDown,
+  Gift,
+  Smartphone,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+import { getPassQR, rotatePassQR } from "@/lib/api";
+import { getToken } from "@/lib/session";
 
 export function PassScreen() {
-  const [qrValidTime, setQrValidTime] = useState(22) // seconds
-  const [balance, setBalance] = useState(12.4)
-  const [showRechargeModal, setShowRechargeModal] = useState(false)
+  const [qrValidTime, setQrValidTime] = useState(30);
+  const [qrValue, setQrValue] = useState<string | null>(null);
+  const [rotating, setRotating] = useState(false);
+  const [balance, setBalance] = useState(12.4);
+  const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Countdown timer for QR validity
+  useEffect(() => setMounted(true), []);
+
+  const token = getToken();
+
+  const fetchFirstQR = useCallback(async () => {
+    if (!token) return;
+    try {
+      const { qr } = await getPassQR(token);
+      setQrValue(qr);
+      setQrValidTime(30);
+    } catch {
+      setQrValue(null);
+    }
+  }, [token]);
+
+  const rotateQR = useCallback(async () => {
+    if (!token || rotating) return;
+    try {
+      setRotating(true);
+      const { qr } = await rotatePassQR(token);
+      setQrValue(qr);
+      setQrValidTime(30);
+    } catch {
+      // si falla, mantenemos el anterior; reintenta en la siguiente vuelta
+    } finally {
+      setRotating(false);
+    }
+  }, [token, rotating]);
+
+  // Primer QR
   useEffect(() => {
-    const timer = setInterval(() => {
-      setQrValidTime((prev) => (prev > 0 ? prev - 1 : 30)) // Reset to 30 when reaches 0
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+    fetchFirstQR();
+  }, [fetchFirstQR]);
+
+  // Countdown y rotación cada 30s
+  useEffect(() => {
+    const t = setInterval(() => {
+      setQrValidTime((prev) => {
+        if (prev <= 1) {
+          rotateQR();
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [rotateQR]);
 
   const tripHistory = [
     { id: 1, route: "Ruta 1 - Norte", amount: -1.5, type: "expense", date: "Hoy, 14:30" },
     { id: 2, route: "Ruta 3 - Centro", amount: -1.5, type: "expense", date: "Hoy, 09:15" },
     { id: 3, route: "Recarga en línea", amount: 20.0, type: "recharge", date: "Ayer, 18:00" },
     { id: 4, route: "Ruta 2 - Sur", amount: -1.5, type: "expense", date: "Ayer, 16:45" },
-  ]
+  ];
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const isExpiring = qrValue && qrValidTime <= 5;
 
   return (
     <div className="flex-1 overflow-y-auto pb-20 bg-background">
@@ -41,35 +117,47 @@ export function PassScreen() {
           <p className="text-sm text-muted-foreground">Tu pase digital para viajar</p>
         </div>
 
-        {/* Dynamic QR Code Card */}
+        {/* QR Dinámico */}
         <Card className="p-6 space-y-4 border-2 shadow-lg rounded-3xl bg-card animate-in fade-in duration-500">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Mi QR dinámico</h2>
             <Badge variant="secondary" className="rounded-full">
               <Clock className="w-3 h-3 mr-1" />
-              Válido por {formatTime(qrValidTime)}
+              {qrValue ? `Válido por ${formatTime(qrValidTime)}` : "Generando..."}
             </Badge>
           </div>
 
-          {/* QR Code Display */}
-          <div className="bg-white p-6 rounded-2xl flex items-center justify-center animate-in zoom-in duration-300">
-            <div className="relative">
-              {/* Simulated QR Code */}
-              <div className="w-48 h-48 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
-                <QrCode className="w-32 h-32 text-white" strokeWidth={1.5} />
+          <div className="bg-white p-6 rounded-2xl flex items-center justify-center min-h-[220px]">
+            {mounted && qrValue ? (
+              <div className="relative">
+                <QRCode value={qrValue} size={192} />
+                {isExpiring && (
+                  <div className="absolute -inset-3 rounded-xl border-4 border-yellow-400 animate-pulse pointer-events-none" />
+                )}
               </div>
-              {/* Animated border */}
-              <div className="absolute inset-0 rounded-xl border-4 border-accent animate-pulse" />
-            </div>
+            ) : (
+              <div className="text-center space-y-2 text-muted-foreground">
+                <QrIcon className="w-10 h-10 mx-auto animate-pulse" />
+                <p className="text-xs">Obteniendo código...</p>
+              </div>
+            )}
           </div>
 
-          <div className="text-center">
-            <p className="text-sm font-medium text-muted-foreground">Mostrar para abordar</p>
-            <p className="text-xs text-muted-foreground mt-1">El código se renueva automáticamente</p>
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              onClick={rotateQR}
+              disabled={!qrValue || rotating}
+            >
+              {rotating ? "Rotando..." : "Rotar ahora"}
+            </Button>
+            <p className="text-xs text-muted-foreground">Se regenera automáticamente cada 30s</p>
           </div>
         </Card>
 
-        {/* Balance Card */}
+        {/* Saldo */}
         <Card className="p-6 space-y-4 border-2 shadow-lg rounded-3xl bg-gradient-to-br from-card to-accent/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -82,7 +170,6 @@ export function PassScreen() {
               </div>
             </div>
           </div>
-
           <Button
             size="lg"
             className="w-full h-12 rounded-2xl font-semibold bg-accent hover:bg-accent/90 text-accent-foreground"
@@ -91,16 +178,12 @@ export function PassScreen() {
             <CreditCard className="w-5 h-5 mr-2" />
             Recargar saldo
           </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            También puedes recargar en puntos físicos autorizados
-          </p>
+          <p className="text-xs text-center text-muted-foreground">También puedes recargar en puntos físicos autorizados</p>
         </Card>
 
-        {/* Trip History */}
+        {/* Historial */}
         <Card className="p-6 space-y-4 border-2 shadow-lg rounded-3xl bg-card">
           <h2 className="text-lg font-semibold text-foreground">Historial de movimientos</h2>
-
           <div className="space-y-3">
             {tripHistory.map((trip) => (
               <div
@@ -109,9 +192,8 @@ export function PassScreen() {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      trip.type === "expense" ? "bg-destructive/10" : "bg-success/10"
-                    }`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${trip.type === "expense" ? "bg-destructive/10" : "bg-success/10"
+                      }`}
                   >
                     {trip.type === "expense" ? (
                       <TrendingDown className="w-5 h-5 text-destructive" />
@@ -124,7 +206,10 @@ export function PassScreen() {
                     <p className="text-xs text-muted-foreground">{trip.date}</p>
                   </div>
                 </div>
-                <p className={`text-lg font-bold ${trip.type === "expense" ? "text-destructive" : "text-success"}`}>
+                <p
+                  className={`text-lg font-bold ${trip.type === "expense" ? "text-destructive" : "text-success"
+                    }`}
+                >
                   {trip.amount > 0 ? "+" : ""}S/ {Math.abs(trip.amount).toFixed(2)}
                 </p>
               </div>
@@ -132,7 +217,7 @@ export function PassScreen() {
           </div>
         </Card>
 
-        {/* Physical Card Info */}
+        {/* Tarjeta física */}
         <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-card">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -148,7 +233,7 @@ export function PassScreen() {
           </Button>
         </Card>
 
-        {/* Promotions Banner */}
+        {/* Promoción */}
         <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-gradient-to-r from-accent/20 to-primary/20">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
@@ -165,7 +250,7 @@ export function PassScreen() {
         </Card>
       </div>
 
-      {/* Recharge Modal Overlay (Simple version) */}
+      {/* Modal de recarga */}
       {showRechargeModal && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end animate-in fade-in duration-200"
@@ -197,5 +282,5 @@ export function PassScreen() {
         </div>
       )}
     </div>
-  )
+  );
 }

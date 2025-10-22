@@ -11,6 +11,7 @@ import { TripInProgressScreen } from "@/components/trip-in-progress-screen";
 import { NotificationsScreen } from "@/components/notifications-screen";
 import { ProfileScreen } from "@/components/profile-screen";
 import type { UserRole } from "@/app/page";
+import { MapWidget } from "@/components/map-widget";
 
 import { getToken, getUser, saveUser, clearToken } from "@/lib/session";
 import { getMe } from "@/lib/api";
@@ -46,7 +47,6 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
   }, [token]);
 
   const displayName = useMemo(() => {
-    // si tu backend expone student.fullName (o fullname mapeado a fullName)
     const full = user?.student?.fullName || user?.student?.fullname;
     if (full && typeof full === "string" && full.trim().length > 0) return full;
     if (user?.email) return user.email;
@@ -65,7 +65,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         },
         (error) => {
           console.log("[v0] Geolocation error:", error);
-          setUserLocation({ lat: -0.1807, lng: -78.4678 });
+          // fallback: centro de Managua aprox
+          setUserLocation({ lat: 12.136389, lng: -86.251389 });
         }
       );
     }
@@ -109,7 +110,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                 className="rounded-xl gap-2"
                 onClick={() => {
                   clearToken();
-                  location.reload(); // simple reset; si prefieres, sube un callback al parent para cambiar screen
+                  location.reload();
                 }}
               >
                 <LogOut className="w-4 h-4" />
@@ -117,23 +118,19 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               </Button>
             </div>
 
-            {/* MAPA FAKE */}
-            <div className="absolute inset-0 bg-muted">
+            {/* MAPA REAL */}
+            <div className="absolute inset-0">
               {userLocation ? (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
-                  <div className="text-center space-y-4 p-6">
-                    <MapPin className="w-16 h-16 mx-auto text-primary" />
-                    <div className="space-y-2">
-                      <p className="text-lg font-semibold text-foreground">Mapa en vivo</p>
-                      <p className="text-sm text-muted-foreground">
-                        Ubicación: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-4 max-w-xs">
-                        En producción, aquí se mostraría Google Maps con buses en tiempo real y paradas cercanas
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <MapWidget
+                  center={userLocation}
+                  buses={[
+                    { lat: userLocation.lat + 0.005, lng: userLocation.lng + 0.004 },
+                    { lat: userLocation.lat - 0.003, lng: userLocation.lng + 0.006 },
+                  ]}
+                  stops={[
+                    { lat: userLocation.lat + 0.001, lng: userLocation.lng - 0.002 },
+                  ]}
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center space-y-2">
@@ -142,18 +139,6 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                   </div>
                 </div>
               )}
-
-              {/* marcadores de ejemplo */}
-              <div className="absolute top-1/4 left-1/3 w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                <span className="text-primary-foreground text-xs font-bold">B1</span>
-              </div>
-              <div className="absolute top-1/2 right-1/4 w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                <span className="text-primary-foreground text-xs font-bold">B2</span>
-              </div>
-
-              <div className="absolute bottom-1/3 left-1/4 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg">
-                <MapPin className="w-5 h-5 text-accent-foreground" />
-              </div>
             </div>
 
             {/* CARD inferior */}

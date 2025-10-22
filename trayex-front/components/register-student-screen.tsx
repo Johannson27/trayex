@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Bus, User, Mail, Lock, Phone, Droplet, CreditCard, Building2 } from "lucide-react"
 import { register, getMe } from "@/lib/api"
+import { saveToken, saveUser } from "@/lib/session"
+import { UNIVERSITIES_NI } from "@/lib/universities-ni";
 
 interface RegisterStudentScreenProps {
   onBack: () => void
@@ -39,7 +41,6 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
     setErr(null)
 
     if (step === 1) {
-      // Validaciones de paso 1
       if (!formData.fullName.trim()) return setErr("Ingresa tu nombre completo")
       if (!formData.email) return setErr("Ingresa tu correo institucional")
       if (formData.password.length < 8) return setErr("La contraseña debe tener al menos 8 caracteres")
@@ -49,17 +50,33 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
       return
     }
 
-    // Paso 2: registrar en backend
+    // Paso 2: registrar en backend con campos extra
     setLoading(true)
     try {
-      const { token } = await register(formData.email, formData.password, formData.fullName.trim())
+      const { token, user } = await register(
+        formData.email,
+        formData.password,
+        formData.fullName.trim(),
+        {
+          bloodType: formData.bloodType || undefined,
+          idNumber: formData.idNumber || undefined,
+          university: formData.university || undefined,
+          emergencyName: formData.emergencyName || undefined,
+          emergencyContact: formData.emergencyContact || undefined,
+        }
+      )
 
-      // Dev rápido: token en localStorage (en prod → cookie HttpOnly)
-      localStorage.setItem("token", token)
+      // Guarda token + user (dev: localStorage)
+      saveToken ? saveToken(token) : localStorage.setItem("token", token)
 
-      try { await getMe(token) } catch { }
+      try {
+        const me = await getMe(token) // { user: {..., student: {...}} }
+        saveUser ? saveUser(me.user) : localStorage.setItem("user", JSON.stringify(me.user))
+      } catch {
+        saveUser ? saveUser(user) : localStorage.setItem("user", JSON.stringify(user))
+      }
 
-      onSuccess?.() // tu page te lleva a Onboarding
+      onSuccess?.() // page.tsx te lleva a onboarding
     } catch (e: any) {
       const msg = e?.message ?? "No se pudo crear la cuenta"
       if (msg.includes("registrado") || msg.toLowerCase().includes("already")) {
@@ -173,8 +190,6 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
               </>
             ) : (
               <>
-                {/* Estos campos aún no se guardan en DB; los mantenemos para UI.
-                    Si luego quieres persistirlos, añadimos columnas y endpoint. */}
                 <div className="space-y-2">
                   <Label htmlFor="bloodType" className="text-sm font-medium">Tipo de sangre</Label>
                   <div className="relative">
@@ -219,16 +234,20 @@ export function RegisterStudentScreen({ onBack, onSuccess }: RegisterStudentScre
                 <div className="space-y-2">
                   <Label htmlFor="university" className="text-sm font-medium">Universidad</Label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="university"
-                      type="text"
-                      placeholder="Universidad Nacional"
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+                    <Select
                       value={formData.university}
-                      onChange={(e) => updateField("university", e.target.value)}
-                      className="pl-11 h-14 rounded-2xl border-2 focus:border-primary"
-                      required
-                    />
+                      onValueChange={(value) => updateField("university", value)}
+                    >
+                      <SelectTrigger className="pl-11 h-14 rounded-2xl border-2 focus:border-primary">
+                        <SelectValue placeholder="Selecciona tu universidad" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-64">
+                        {UNIVERSITIES_NI.map((u) => (
+                          <SelectItem key={u} value={u}>{u}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

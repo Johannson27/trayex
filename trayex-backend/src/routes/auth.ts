@@ -78,5 +78,83 @@ router.get("/me", async (req, res) => {
   }
 });
 
+export function requireAuth(req: any, res: any, next: any) {
+  try {
+    const auth = req.header("authorization") || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (!token) return res.status(401).json({ error: "Missing token" });
+    const payload = verifySessionToken(token); // { sub, role }
+    (req as any).auth = payload;
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// GET perfil
+router.get("/me/profile", requireAuth, async (req, res) => {
+  const { sub } = (req as any).auth;
+  const user = await prisma.user.findUnique({
+    where: { id: sub },
+    select: { id: true, email: true, phone: true, role: true },
+  });
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: sub },
+    select: {
+      fullName: true,
+      bloodType: true,
+      idNumber: true,
+      university: true,
+      emergencyName: true,
+      emergencyContact: true,
+    },
+  });
+
+  return res.json({ user, profile });
+});
+
+// PUT perfil
+router.put("/me/profile", requireAuth, async (req, res) => {
+  const { sub } = (req as any).auth;
+  const data = req.body || {};
+
+  // asegura que exista profile
+  await prisma.studentProfile.upsert({
+    where: { userId: sub },
+    update: {
+      fullName: data.fullName ?? undefined,
+      bloodType: data.bloodType ?? undefined,
+      idNumber: data.idNumber ?? undefined,
+      university: data.university ?? undefined,
+      emergencyName: data.emergencyName ?? undefined,
+      emergencyContact: data.emergencyContact ?? undefined,
+    },
+    create: {
+      userId: sub,
+      fullName: data.fullName ?? null,
+      bloodType: data.bloodType ?? null,
+      idNumber: data.idNumber ?? null,
+      university: data.university ?? null,
+      emergencyName: data.emergencyName ?? null,
+      emergencyContact: data.emergencyContact ?? null,
+    },
+  });
+
+  const updated = await prisma.studentProfile.findUnique({
+    where: { userId: sub },
+    select: {
+      fullName: true,
+      bloodType: true,
+      idNumber: true,
+      university: true,
+      emergencyName: true,
+      emergencyContact: true,
+    },
+  });
+
+  return res.json({ profile: updated });
+});
 
 export default router;

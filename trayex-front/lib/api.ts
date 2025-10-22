@@ -1,100 +1,210 @@
-// trayex-front/lib/api.ts
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
-// trayex-front/src/lib/api.ts
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+// frontend/src/lib/api.ts
+// (si tu carpeta es distinta, ajusta la ruta)
 
-async function apiRequest<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
-    const headers = new Headers(init.headers || {});
-    headers.set("Content-Type", "application/json");
-    if (token) headers.set("Authorization", `Bearer ${token}`);
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
-    const res = await fetch(`${API_BASE}${path}`, { ...init, headers, cache: "no-store" });
-    const text = await res.text();
+// -------- helper --------
+async function api<T>(
+    path: string,
+    opts: RequestInit = {}
+): Promise<T> {
+    const url = `${BASE}${path}`;
+    const res = await fetch(url, opts);
     if (!res.ok) {
-        throw new Error(text || `HTTP ${res.status}`);
+        let msg = `HTTP ${res.status}`;
+        try {
+            const j = await res.json();
+            if (j?.error) msg = j.error;
+        } catch { }
+        throw new Error(msg);
     }
-    try { return JSON.parse(text) as T; } catch { return {} as T; }
+    return (await res.json()) as T;
 }
 
-export async function register(email: string, password: string, fullName?: string, extra?: any) {
-    return apiRequest<{ user: any; token: string }>(
-        "/auth/register",
-        { method: "POST", body: JSON.stringify({ email, password, fullName, ...extra }) }
-    );
-}
-
+// -------- AUTH --------
 export async function login(email: string, password: string) {
-    return apiRequest<{ user: any; token: string }>(
-        "/auth/login",
-        { method: "POST", body: JSON.stringify({ email, password }) }
-    );
+    return api<{ token: string; user?: any }>("/auth/login", {
+        method: "POST",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ email, password }),
+    });
+}
+
+export async function register(
+    email: string,
+    password: string,
+    fullName: string,
+    profile?: {
+        bloodType?: string | null;
+        idNumber?: string | null;
+        university?: string | null;
+        emergencyName?: string | null;
+        emergencyContact?: string | null;
+    }
+) {
+    return api<{ token: string; user?: any }>("/auth/register", {
+        method: "POST",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({
+            email,
+            password,
+            fullName,
+            ...(profile ?? {}),
+        }),
+    });
 }
 
 export async function getMe(token: string) {
-    return apiRequest<{ user: any }>("/auth/me", { method: "GET" }, token);
-}
-
-
-export type Session = { token: string; user?: { id: string; role: string } } | null;
-
-const KEY = "token";
-
-export function saveToken(token: string) {
-    localStorage.setItem(KEY, token);
-}
-export function getToken(): string | null {
-    return localStorage.getItem(KEY);
-}
-export function clearToken() {
-    localStorage.removeItem(KEY);
-}
-
-// src/lib/api.ts
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-export async function getMyProfile(token: string) {
-    const r = await fetch(`${API_URL}/me/profile`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-        cache: "no-store",
+    return api<{ user: any }>("/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
     });
-    if (!r.ok) throw new Error(await r.text());
-    return r.json() as Promise<{
-        user: { id: string; email: string | null; phone: string | null; role: string };
-        profile: {
-            id: string;
-            userId: string;
-            fullName?: string | null;
-            bloodType?: string | null;
-            idNumber?: string | null;
-            university?: string | null;
-            emergencyName?: string | null;
-            emergencyContact?: string | null;
-            qrToken?: string | null;
-        } | null;
-    }>;
+}
+
+// -------- PROFILE --------
+export async function getMyProfile(token: string) {
+    return api<{ user: any; profile: any | null }>("/auth/me/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
 }
 
 export async function updateMyProfile(
     token: string,
-    payload: Partial<{
-        fullName: string;
-        bloodType: string;
-        idNumber: string;
-        university: string;
-        emergencyName: string;
-        emergencyContact: string;
-    }>
+    data: {
+        fullName?: string;
+        bloodType?: string;
+        idNumber?: string;
+        university?: string;
+        emergencyName?: string;
+        emergencyContact?: string;
+    }
 ) {
-    const r = await fetch(`${API_URL}/me/profile`, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+    return api<{ profile: any }>("/auth/me/profile", {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
     });
-    if (!r.ok) throw new Error(await r.text());
-    return r.json() as Promise<{ profile: any }>;
 }
+
+// -------- PASS / QR --------
+export async function getPassQR(token: string) {
+    return api<{ qr: string }>("/pass/qr", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+}
+
+export async function rotatePassQR(token: string) {
+    return api<{ qr: string }>("/pass/qr/rotate", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+}
+
+// -------- RESERVATIONS --------
+export async function getMyReservations(token: string) {
+    return api<{
+        reservations: Array<{
+            id: string;
+            status: string;
+            offlineToken?: string | null;
+            createdAt: string;
+            timeslot: {
+                id: string;
+                startAt: string;
+                endAt: string;
+                zoneId: string;
+                zone: { name: string };
+            };
+            stop: { id: string; name: string };
+        }>;
+    }>("/reservations/me/reservations", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+}
+
+export async function cancelReservation(token: string, reservationId: string) {
+    return api<{ ok: boolean; reservation: any }>(
+        `/reservations/reservations/${reservationId}/cancel`,
+        {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+}
+
+// ===== RUTAS =====
+export async function fetchRoutes() {
+    // intenta pedir al backend /routes, si falla devolvemos un mock para que la UI no muera
+    const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+    try {
+        const res = await fetch(`${BASE}/routes`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return (await res.json()) as {
+            routes: Array<{
+                id: string;
+                name: string;
+                description: string | null;
+                mainStops: string[];
+                status: "ACTIVE" | "SAFE" | "INCIDENT";
+                estimatedTime: string;
+                capacity: string;
+                isFavorite: boolean;
+            }>
+        };
+    } catch {
+        // fallback mock
+        return {
+            routes: [
+                {
+                    id: "1",
+                    name: "Ruta 1 - Norte",
+                    description: "Campus Central → Zona Industrial",
+                    mainStops: ["Campus Central", "Av. Principal", "Centro Comercial", "Zona Industrial"],
+                    status: "ACTIVE" as const,
+                    estimatedTime: "15 min",
+                    capacity: "12/40",
+                    isFavorite: false,
+                },
+                {
+                    id: "2",
+                    name: "Ruta 2 - Sur",
+                    description: "Campus Central → Residencias",
+                    mainStops: ["Campus Central", "Hospital", "Plaza Mayor", "Residencias"],
+                    status: "SAFE" as const,
+                    estimatedTime: "20 min",
+                    capacity: "8/40",
+                    isFavorite: true,
+                },
+                {
+                    id: "3",
+                    name: "Ruta 3 - Este",
+                    description: "Campus Central → Parque Tecnológico",
+                    mainStops: ["Campus Central", "Biblioteca", "Estadio", "Parque Tecnológico"],
+                    status: "INCIDENT" as const,
+                    estimatedTime: "25 min",
+                    capacity: "35/40",
+                    isFavorite: false,
+                },
+            ],
+        };
+    }
+}
+
+// Reserva rápida por ruta (demo). Si aún no tienes endpoint en backend, devolverá ok:true
+export async function createReservation(token: string, routeId: string) {
+    const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+    try {
+        // Opción 1 (si creas este endpoint en tu backend):
+        const res = await fetch(`${BASE}/reservations/quick`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ routeId }),
+        });
+        if (!res.ok) throw new Error((await res.json())?.error ?? `HTTP ${res.status}`);
+        return await res.json(); // { reservation: {...} }
+    } catch {
+        // Opción 2 (fallback local para no romper la UI mientras no existe el endpoint)
+        return { ok: true };
+    }
+}
+

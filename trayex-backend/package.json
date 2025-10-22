@@ -3,14 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc -p .",
-    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "seed": "ts-node src/scripts/seed.ts",
+    "prisma:studio":"prisma studio",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "ts-node prisma/seed.ts",
     "openapi:serve": "npx redoc-cli serve openapi.yaml"
+    
   },
   "dependencies": {
     "@prisma/client": "^5.18.0",
@@ -41,5 +44,8 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
-  }
+  },
+  "prisma": {
+  "seed": "ts-node --compiler-options {\"module\":\"commonjs\"} prisma/seed.ts"
+}
 }

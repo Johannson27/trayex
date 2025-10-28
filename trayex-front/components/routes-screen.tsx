@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Bus, MapPin, Clock, Heart, ChevronRight, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchRoutes, cancelReservation } from "@/lib/api";
+import { fetchRoutes, listZones, listStops, listTimeslots, createReservation, getMyReservations } from "@/lib/api";
 import { getToken } from "@/lib/session";
-import { createReservation } from "@/lib/api";
-
 
 type Status = "ACTIVE" | "SAFE" | "INCIDENT";
 
@@ -42,6 +40,17 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
   const [selectedTimeBlock, setSelectedTimeBlock] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Modal state
+  const [showReserveModal, setShowReserveModal] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<RouteRow | null>(null);
+  const [zones, setZones] = useState<Array<{ id: string; name: string }>>([]);
+  const [zoneId, setZoneId] = useState<string>("");
+  const [stops, setStops] = useState<Array<{ id: string; name: string }>>([]);
+  const [timeslots, setTimeslots] = useState<Array<{ id: string; startAt: string; endAt: string }>>([]);
+  const [stopId, setStopId] = useState<string>("");
+  const [timeslotId, setTimeslotId] = useState<string>("");
+  const [creating, setCreating] = useState(false);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -73,14 +82,77 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
     return "Incidente";
   };
 
-  const handleReserve = async (route: RouteRow) => {
+  const openReserveModal = async (route: RouteRow) => {
     if (route.status === "INCIDENT") return;
     if (!token) return alert("Inicia sesión para reservar.");
+
+    setSelectedRoute(route);
+    setShowReserveModal(true);
+
     try {
-      await createReservation(token, route.id);
-      onReserveRoute?.(route.name);
+      const { zones } = await listZones();
+      setZones(zones);
+      const defaultZone = zones[0]?.id || "";
+      setZoneId(defaultZone);
+
+      if (defaultZone) {
+        const [{ stops }, { timeslots }] = await Promise.all([
+          listStops(defaultZone),
+          listTimeslots(defaultZone),
+        ]);
+        setStops(stops.map(s => ({ id: s.id, name: s.name })));
+        setTimeslots(timeslots.map(t => ({ id: t.id, startAt: t.startAt, endAt: t.endAt })));
+        setStopId(stops[0]?.id || "");
+        setTimeslotId(timeslots[0]?.id || "");
+      }
     } catch (e: any) {
-      alert(e?.message ?? "No se pudo reservar");
+      setErr(e?.message ?? "No se pudo preparar la reserva");
+    }
+  };
+
+  const onChangeZone = async (zid: string) => {
+    setZoneId(zid);
+    setStopId("");
+    setTimeslotId("");
+    if (!zid) {
+      setStops([]);
+      setTimeslots([]);
+      return;
+    }
+    const [{ stops }, { timeslots }] = await Promise.all([
+      listStops(zid),
+      listTimeslots(zid),
+    ]);
+    setStops(stops.map(s => ({ id: s.id, name: s.name })));
+    setTimeslots(timeslots.map(t => ({ id: t.id, startAt: t.startAt, endAt: t.endAt })));
+    setStopId(stops[0]?.id || "");
+    setTimeslotId(timeslots[0]?.id || "");
+  };
+
+  const confirmReservation = async () => {
+    if (!token) return alert("Inicia sesión para reservar.");
+    if (!timeslotId || !stopId) return alert("Elige un horario y una parada.");
+
+    try {
+      setCreating(true);
+      await createReservation(token, { timeslotId, stopId });
+
+      // opcional: refrescar reservas
+      await getMyReservations(token);
+
+      setShowReserveModal(false);
+      if (selectedRoute) onReserveRoute?.(selectedRoute.name);
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      if (/capacidad/i.test(msg)) {
+        alert("La capacidad de ese horario ya está llena. Elige otro horario.");
+      } else if (/timeslot|stop/i.test(msg)) {
+        alert("Horario o parada inválidos. Intenta seleccionarlos de nuevo.");
+      } else {
+        alert(msg || "No se pudo crear la reserva");
+      }
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -106,30 +178,6 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
         </div>
 
         {err && <p className="text-xs text-red-600 bg-red-100/60 rounded-md p-2">{err}</p>}
-
-        {/* Filters */}
-        {showFilters && (
-          <div className="space-y-3 animate-in slide-in-from-top duration-300">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Bloque horario</p>
-              <div className="grid grid-cols-2 gap-2">
-                {timeBlocks.map((block) => (
-                  <button
-                    key={block.id}
-                    onClick={() => setSelectedTimeBlock(selectedTimeBlock === block.id ? null : block.id)}
-                    className={`p-3 rounded-xl border-2 transition-all ${selectedTimeBlock === block.id
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card text-foreground"
-                      }`}
-                  >
-                    <p className="text-sm font-semibold">{block.label}</p>
-                    <p className="text-xs text-muted-foreground">{block.time}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Routes List */}
@@ -158,12 +206,7 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
                   onClick={() => toggleFavorite(route.id)}
                   className="flex-shrink-0 p-2 rounded-full hover:bg-muted transition-colors"
                 >
-                  <svg
-                    className={`w-5 h-5 ${route.isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`}
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 21s-6.716-4.35-9.428-7.062C-0.284 11.79.17 7.79 3.172 6.172 6.174 4.555 8.53 6.26 12 9.5c3.47-3.24 5.826-4.945 8.828-3.328 3.002 1.618 3.456 5.618.6 7.766C18.716 16.65 12 21 12 21z" />
-                  </svg>
+                  <Heart className={`w-5 h-5 ${route.isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
                 </button>
               </div>
 
@@ -202,7 +245,7 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
               <Button
                 className="w-full h-12 rounded-2xl font-semibold bg-accent hover:bg-accent/90 text-accent-foreground"
                 disabled={route.status === "INCIDENT"}
-                onClick={() => handleReserve(route)}
+                onClick={() => openReserveModal(route)}
               >
                 {route.status === "INCIDENT" ? "No disponible" : "Reservar"}
                 {route.status !== "INCIDENT" && <ChevronRight className="w-5 h-5 ml-1" />}
@@ -211,6 +254,81 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
           </Card>
         ))}
       </div>
+
+      {/* Modal simple de reserva */}
+      {showReserveModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+          onClick={() => setShowReserveModal(false)}
+        >
+          <Card
+            className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold text-foreground">Reservar {selectedRoute?.name}</h2>
+
+            {/* Zona */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Zona</label>
+              <select
+                className="w-full border rounded-xl p-2 bg-background"
+                value={zoneId}
+                onChange={(e) => onChangeZone(e.target.value)}
+              >
+                {zones.map((z) => (
+                  <option key={z.id} value={z.id}>{z.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Stop */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Parada</label>
+              <select
+                className="w-full border rounded-xl p-2 bg-background"
+                value={stopId}
+                onChange={(e) => setStopId(e.target.value)}
+              >
+                {stops.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Timeslot */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Horario</label>
+              <select
+                className="w-full border rounded-xl p-2 bg-background"
+                value={timeslotId}
+                onChange={(e) => setTimeslotId(e.target.value)}
+              >
+                {timeslots.map((t) => {
+                  const start = new Date(t.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  const end = new Date(t.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  return (
+                    <option key={t.id} value={t.id}>{start} - {end}</option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Botones */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                className="flex-1 rounded-xl"
+                onClick={confirmReservation}
+                disabled={!timeslotId || !stopId || creating}
+              >
+                {creating ? "Reservando..." : "Confirmar reserva"}
+              </Button>
+              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowReserveModal(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

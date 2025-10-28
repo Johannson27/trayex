@@ -1,14 +1,8 @@
 // frontend/src/lib/api.ts
-// (si tu carpeta es distinta, ajusta la ruta)
-
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
-// -------- helper --------
-async function api<T>(
-    path: string,
-    opts: RequestInit = {}
-): Promise<T> {
+async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
     const url = `${BASE}${path}`;
     const res = await fetch(url, opts);
     if (!res.ok) {
@@ -100,6 +94,45 @@ export async function rotatePassQR(token: string) {
     });
 }
 
+// ===== RUTAS =====
+export async function fetchRoutes() {
+    const res = await fetch(`${BASE}/routes`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as {
+        routes: Array<{
+            id: string;
+            name: string;
+            description: string | null;
+            mainStops: string[];
+            status: "ACTIVE" | "SAFE" | "INCIDENT";
+            estimatedTime: string;
+            capacity: string;
+            isFavorite: boolean;
+        }>;
+    };
+}
+
+// ===== ZONAS / STOPS / TIMESLOTS =====
+export async function listZones() {
+    return api<{ zones: Array<{ id: string; name: string }> }>("/zones");
+}
+
+export async function listStops(zoneId: string) {
+    return api<{ stops: Array<{ id: string; name: string; lat: number; lng: number; isSafe: boolean }> }>(
+        `/zones/${zoneId}/stops`
+    );
+}
+
+export async function listTimeslots(zoneId: string, fromISO?: string, limit = 6) {
+    const p = new URLSearchParams();
+    if (fromISO) p.set("from", fromISO);
+    if (limit) p.set("limit", String(limit));
+    const qs = p.toString() ? `?${p.toString()}` : "";
+    return api<{ timeslots: Array<{ id: string; startAt: string; endAt: string; capacity: number }> }>(
+        `/zones/${zoneId}/timeslots${qs}`
+    );
+}
+
 // -------- RESERVATIONS --------
 export async function getMyReservations(token: string) {
     return api<{
@@ -117,94 +150,35 @@ export async function getMyReservations(token: string) {
             };
             stop: { id: string; name: string };
         }>;
-    }>("/reservations/me/reservations", {
+    }>("/me/reservations", {
         headers: { Authorization: `Bearer ${token}` },
     });
 }
 
 export async function cancelReservation(token: string, reservationId: string) {
-    return api<{ ok: boolean; reservation: any }>(
-        `/reservations/reservations/${reservationId}/cancel`,
-        {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-        }
-    );
+    return api<{ ok: boolean; reservation: any }>(`/reservations/${reservationId}/cancel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+    });
 }
 
-// ===== RUTAS =====
-export async function fetchRoutes() {
-    // intenta pedir al backend /routes, si falla devolvemos un mock para que la UI no muera
-    const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-    try {
-        const res = await fetch(`${BASE}/routes`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return (await res.json()) as {
-            routes: Array<{
-                id: string;
-                name: string;
-                description: string | null;
-                mainStops: string[];
-                status: "ACTIVE" | "SAFE" | "INCIDENT";
-                estimatedTime: string;
-                capacity: string;
-                isFavorite: boolean;
-            }>
-        };
-    } catch {
-        // fallback mock
-        return {
-            routes: [
-                {
-                    id: "1",
-                    name: "Ruta 1 - Norte",
-                    description: "Campus Central → Zona Industrial",
-                    mainStops: ["Campus Central", "Av. Principal", "Centro Comercial", "Zona Industrial"],
-                    status: "ACTIVE" as const,
-                    estimatedTime: "15 min",
-                    capacity: "12/40",
-                    isFavorite: false,
-                },
-                {
-                    id: "2",
-                    name: "Ruta 2 - Sur",
-                    description: "Campus Central → Residencias",
-                    mainStops: ["Campus Central", "Hospital", "Plaza Mayor", "Residencias"],
-                    status: "SAFE" as const,
-                    estimatedTime: "20 min",
-                    capacity: "8/40",
-                    isFavorite: true,
-                },
-                {
-                    id: "3",
-                    name: "Ruta 3 - Este",
-                    description: "Campus Central → Parque Tecnológico",
-                    mainStops: ["Campus Central", "Biblioteca", "Estadio", "Parque Tecnológico"],
-                    status: "INCIDENT" as const,
-                    estimatedTime: "25 min",
-                    capacity: "35/40",
-                    isFavorite: false,
-                },
-            ],
-        };
-    }
+/** Crear reserva REAL (con timeslot/stop) -> POST /reservations */
+export async function createReservation(
+    token: string,
+    params: { timeslotId: string; stopId: string }
+) {
+    return api<{ reservation: any }>(`/reservations`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, Authorization: `Bearer ${token}` },
+        body: JSON.stringify(params),
+    });
 }
 
-// Reserva rápida por ruta (demo). Si aún no tienes endpoint en backend, devolverá ok:true
-export async function createReservation(token: string, routeId: string) {
-    const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-    try {
-        // Opción 1 (si creas este endpoint en tu backend):
-        const res = await fetch(`${BASE}/reservations/quick`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ routeId }),
-        });
-        if (!res.ok) throw new Error((await res.json())?.error ?? `HTTP ${res.status}`);
-        return await res.json(); // { reservation: {...} }
-    } catch {
-        // Opción 2 (fallback local para no romper la UI mientras no existe el endpoint)
-        return { ok: true };
-    }
+/** Reserva rápida por ruta -> POST /reservations/quick */
+export async function createQuickReservation(token: string, routeId: string) {
+    return api<{ reservation: any }>(`/reservations/quick`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ routeId }),
+    });
 }
-

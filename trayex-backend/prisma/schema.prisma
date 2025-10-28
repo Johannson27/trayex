@@ -54,10 +54,10 @@ enum Role {
 }
 
 model Zone {
-  id           String     @id @default(cuid())
-  name         String
+  id           String   @id @default(cuid())
+  name         String   @unique
   polygon      Json
-  serviceHours String?
+  serviceHours String
   stops        Stop[]
   timeslots    Timeslot[]
 }

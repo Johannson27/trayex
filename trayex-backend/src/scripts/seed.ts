@@ -1,12 +1,7 @@
 import { prisma } from "../prisma";
 
 async function main() {
-    const count = await prisma.route.count();
-    if (count > 0) {
-        console.log("Routes already seeded");
-        return;
-    }
-
+    // Rutas base (coinciden con tu UI)
     await prisma.route.createMany({
         data: [
             {
@@ -30,17 +25,55 @@ async function main() {
                 status: "INCIDENT",
                 capacity: 40,
             },
-            {
-                name: "Ruta 4 - Oeste",
-                description: "Campus Central → Terminal",
-                mainStops: ["Campus Central", "Mercado", "Estación", "Terminal"] as any,
-                status: "ACTIVE",
-                capacity: 40,
-            },
         ],
+        skipDuplicates: true,
     });
 
-    console.log("Seed done");
+    // Zona + paradas + timeslots para quick-reserve
+    const zone = await prisma.zone.upsert({
+        where: { name: "Zona Centro" },
+        update: {},
+        create: {
+            name: "Zona Centro",
+            polygon: { type: "Polygon", coordinates: [] } as any,
+            serviceHours: "06:00-23:00",
+        },
+    });
+
+    // Paradas
+    const existingStops = await prisma.stop.findMany({ where: { zoneId: zone.id } });
+    if (existingStops.length === 0) {
+        await prisma.stop.createMany({
+            data: [
+                { zoneId: zone.id, name: "Campus Central", lat: 12.119, lng: -86.240, isSafe: true },
+                { zoneId: zone.id, name: "Av. Principal", lat: 12.121, lng: -86.238, isSafe: true },
+                { zoneId: zone.id, name: "Centro Comercial", lat: 12.117, lng: -86.242, isSafe: true },
+            ],
+        });
+    }
+
+    // Timeslots futuros (3 slots de 30 min desde ahora)
+    const now = new Date();
+    const addMin = (d: Date, m: number) => new Date(d.getTime() + m * 60000);
+    const existingTs = await prisma.timeslot.findMany({ where: { zoneId: zone.id, startAt: { gt: now } } });
+    if (existingTs.length === 0) {
+        const t1Start = addMin(now, 10);
+        const t1End = addMin(now, 40);
+        const t2Start = addMin(now, 50);
+        const t2End = addMin(now, 80);
+        const t3Start = addMin(now, 90);
+        const t3End = addMin(now, 120);
+
+        await prisma.timeslot.createMany({
+            data: [
+                { zoneId: zone.id, startAt: t1Start, endAt: t1End, capacity: 40 },
+                { zoneId: zone.id, startAt: t2Start, endAt: t2End, capacity: 40 },
+                { zoneId: zone.id, startAt: t3Start, endAt: t3End, capacity: 40 },
+            ],
+        });
+    }
+
+    console.log("Seed OK");
 }
 
 main()
@@ -48,6 +81,4 @@ main()
         console.error(e);
         process.exit(1);
     })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+    .finally(() => prisma.$disconnect());

@@ -47,12 +47,14 @@ export default function LandingPage() {
                     </div>
 
                     {/* CTA */}
-                    <Link
-                        href="/"
+                    <a
+                        href="/app/trayex.apk"
+                        download
                         className="px-6 py-2 bg-gradient-to-r from-[#204284] to-[#3077B2] text-white rounded-lg text-sm font-medium hover:shadow-lg transition"
                     >
                         Descargar App
-                    </Link>
+                    </a>
+
                 </nav>
             </header>
 
@@ -82,12 +84,14 @@ export default function LandingPage() {
                                 >
                                     Probar demo
                                 </Link>
-                                <Link
-                                    href="/"
+                                <a
+                                    href="/app/trayex.apk"
+                                    download
                                     className="px-8 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white/10 transition text-center"
                                 >
                                     Descargar App
-                                </Link>
+                                </a>
+
                             </div>
                         </div>
 

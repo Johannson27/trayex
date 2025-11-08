@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Bus, ArrowRight } from "lucide-react"
-import type { Screen, UserRole } from "@/app/page"
+import type { Screen, UserRole } from "@/app/app/page"
 
 interface WelcomeScreenProps {
   onNavigate: (screen: Screen, role: UserRole) => void

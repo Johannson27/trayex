@@ -1,0 +1,45 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    container_name: trayex_db
+    restart: always
+    environment:
+      POSTGRES_USER: trayex
+      POSTGRES_PASSWORD: trayexpass
+      POSTGRES_DB: trayex
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./trayex-backend
+    container_name: trayex_backend
+    command: npm run dev
+    working_dir: /app
+    volumes:
+      - ./trayex-backend:/app
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://trayex:trayexpass@db:5432/trayex?schema=public
+
+  frontend:
+    build: ./trayex-frontend
+    container_name: trayex_frontend
+    command: npm run dev
+    working_dir: /app
+    volumes:
+      - ./trayex-frontend:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+
+volumes:
+  db_data:

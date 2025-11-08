@@ -1,0 +1,247 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String              @id @default(cuid())
+  createdAt        DateTime            @default(now())
+  email            String?             @unique
+  phone            String?             @unique
+  role             Role                @default(STUDENT)
+  student          StudentProfile?
+  emergencyContact String?
+  reservations     Reservation[]
+  ratings          Rating[]
+  sosIncidents     SOSIncident[]
+  credential       PasswordCredential?
+}
+
+model PasswordCredential {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model StudentProfile {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  user             User    @relation(fields: [userId], references: [id])
+  universityId     String?
+  studentId        String?
+  qrToken          String?
+  fullName         String? @map("fullname")
+  bloodType        String?
+  idNumber         String?
+  university       String?
+  emergencyName    String?
+  emergencyContact String?
+}
+
+enum Role {
+  STUDENT
+  MONITOR
+  OPS
+  DRIVER
+  ADMIN
+}
+
+model Zone {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  polygon      Json
+  serviceHours String
+  stops        Stop[]
+  timeslots    Timeslot[]
+}
+
+model Stop {
+  id           String        @id @default(cuid())
+  zoneId       String
+  zone         Zone          @relation(fields: [zoneId], references: [id])
+  name         String
+  lat          Float
+  lng          Float
+  isSafe       Boolean       @default(true)
+  activeHours  String?
+  reservations Reservation[]
+}
+
+model Timeslot {
+  id           String        @id @default(cuid())
+  zoneId       String
+  zone         Zone          @relation(fields: [zoneId], references: [id])
+  startAt      DateTime
+  endAt        DateTime
+  capacity     Int
+  reservations Reservation[]
+  trips        Trip[]
+}
+
+model Vehicle {
+  id                String  @id @default(cuid())
+  plate             String  @unique
+  capacity          Int
+  telemetryProvider String?
+  trips             Trip[]
+}
+
+model Trip {
+  id           String          @id @default(cuid())
+  timeslotId   String
+  timeslot     Timeslot        @relation(fields: [timeslotId], references: [id])
+  vehicleId    String?
+  vehicle      Vehicle?        @relation(fields: [vehicleId], references: [id])
+  pathPolyline String?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  tracking     TrackingPoint[]
+  reservations Reservation[]
+}
+
+model TrackingPoint {
+  id      String   @id @default(cuid())
+  tripId  String
+  trip    Trip     @relation(fields: [tripId], references: [id])
+  ts      DateTime
+  lat     Float
+  lng     Float
+  speed   Float?
+  heading Float?
+}
+
+model Reservation {
+  id           String            @id @default(cuid())
+  userId       String
+  timeslotId   String
+  stopId       String
+  tripId       String?
+  status       ReservationStatus @default(PENDING)
+  etaMinutes   Int?
+  createdAt    DateTime          @default(now())
+  offlineToken String?
+
+  user     User     @relation(fields: [userId], references: [id])
+  timeslot Timeslot @relation(fields: [timeslotId], references: [id])
+  stop     Stop     @relation(fields: [stopId], references: [id])
+  trip     Trip?    @relation(fields: [tripId], references: [id])
+  Route    Route?   @relation(fields: [routeId], references: [id])
+  routeId  String?
+
+  @@index([userId])
+  @@index([timeslotId])
+  @@index([stopId])
+  @@index([tripId])
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  BOARDED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+model FarePolicy {
+  id              String   @id @default(cuid())
+  type            FareType
+  priceMinorUnits Int
+  currency        String   @default("NIO")
+}
+
+enum FareType {
+  UNIT
+  DAY
+  WEEK
+}
+
+model BestFareLedger {
+  id          String   @id @default(cuid())
+  userId      String
+  periodStart DateTime
+  periodEnd   DateTime
+  spendUnit   Int      @default(0)
+  spendDay    Int      @default(0)
+  spendWeek   Int      @default(0)
+  adjustments Int      @default(0)
+}
+
+model Payment {
+  id               String   @id @default(cuid())
+  userId           String
+  amountMinorUnits Int
+  currency         String   @default("NIO")
+  method           String
+  status           String
+  externalRef      String?
+  createdAt        DateTime @default(now())
+}
+
+model SOSIncident {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  reservationId String?
+  tripId        String?
+  triggeredAt   DateTime  @default(now())
+  resolvedAt    DateTime?
+  status        String    @default("OPEN")
+  lat           Float?
+  lng           Float?
+  notes         String?
+}
+
+model Rating {
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id])
+  tripId  String?
+  stars   Int
+  comment String?
+  tags    String?
+}
+
+model Notification {
+  id       String    @id @default(cuid())
+  userId   String
+  channel  String
+  template String
+  payload  Json
+  sentAt   DateTime?
+  status   String?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+}
+
+enum RouteStatus {
+  ACTIVE
+  SAFE
+  INCIDENT
+}
+
+model Route {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  // Usamos Json para paradas principales (compatible con SQLite y Postgres)
+  mainStops   Json?
+  status      RouteStatus @default(ACTIVE)
+  capacity    Int         @default(40)
+  createdAt   DateTime    @default(now())
+
+  reservations Reservation[]
+}

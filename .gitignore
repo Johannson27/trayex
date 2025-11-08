@@ -1,0 +1,16 @@
+# Build / deps
+node_modules/
+.next/
+trayex-front/node_modules/
+trayex-backend/node_modules/
+dist/
+build/
+out/
+
+# Env & logs
+.env
+.env.local
+*.log
+
+# SO / basura
+.DS_Store

@@ -1,11 +1,9 @@
 {
     "name": "TRAYEX",
-    "short_name": "Trayex",
-    "description": "Trayectoria y Exactitud — monitoreo, QR y reportes para transporte.",
+    "short_name": "TRAYEX",
     "start_url": "/",
-    "scope": "/",
     "display": "standalone",
-    "background_color": "#204284",
+    "background_color": "#ffffff",
     "theme_color": "#204284",
     "icons": [
         {

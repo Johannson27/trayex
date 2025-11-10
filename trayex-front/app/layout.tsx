@@ -22,14 +22,19 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#204284"
 };
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   return (
-    <html lang="es" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans antialiased">
-        {children}
-        <Analytics />
-      </body>
+    <html lang="es">
+      <head>
+        {mapsKey && (
+          <script async
+            src={`https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places`}>
+          </script>
+        )}
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
+

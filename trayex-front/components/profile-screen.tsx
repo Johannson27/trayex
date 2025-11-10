@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { getMyProfile, updateMyProfile } from "@/lib/api";
 import { getToken, clearAllAuth } from "@/lib/session";
 import { useRouter } from "next/navigation";
-import type { UserRole } from "@/app/page";
+import type { UserRole } from "@/app/app/page";
 
 type Props = { userRole: UserRole };
 

@@ -1,30 +1,21 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import QRCode from "react-qr-code"; // ✅ import directo (sin dynamic)
+import QRCode from "react-qr-code";
 
-import {
-  QrCode as QrIcon,
-  Wallet,
-  Clock,
-  CreditCard,
-  MapPin,
-  TrendingUp,
-  TrendingDown,
-  Gift,
-  Smartphone,
-} from "lucide-react";
+import { QrCode as QrIcon, Wallet, Clock, CreditCard, MapPin, TrendingUp, TrendingDown, Gift, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 import { getPassQR, rotatePassQR, getMyReservations, cancelReservation } from "@/lib/api";
 import { getToken } from "@/lib/session";
+import type { Reservation } from "@/types";
 
 // Tipado simple alineado al API (status es string en la respuesta)
 type ReservationRow = {
   id: string;
-  status: string;
+  status: string; // <- string aquí (no uses ReservationStatus)
   offlineToken?: string | null;
   createdAt: string;
   timeslot: {
@@ -76,7 +67,7 @@ export function PassScreen() {
       setQrValue(qr);
       setQrValidTime(30);
     } catch {
-      // si falla, mantenemos el anterior; reintenta en la siguiente vuelta
+      // mantiene anterior si falla
     } finally {
       setRotating(false);
     }
@@ -87,7 +78,7 @@ export function PassScreen() {
     fetchFirstQR();
   }, [fetchFirstQR]);
 
-  // Countdown y rotación cada 30s
+  // Countdown + rotación cada 30s
   useEffect(() => {
     const t = setInterval(() => {
       setQrValidTime((prev) => {
@@ -107,8 +98,8 @@ export function PassScreen() {
     setLoadingRes(true);
     setErrRes(null);
     try {
-      const { reservations } = await getMyReservations(token);
-      setReservations(reservations);
+      const { reservations } = await getMyReservations(token); // ← token OBLIGATORIO
+      setReservations(reservations as ReservationRow[]);
     } catch (e: any) {
       setErrRes(e?.message ?? "No se pudieron cargar tus reservas");
     } finally {
@@ -124,7 +115,7 @@ export function PassScreen() {
     if (!token) return;
     try {
       setCancellingId(id);
-      await cancelReservation(token, id);
+      await cancelReservation(token, id); // ← (token, id)
       await loadReservations();
     } catch (e: any) {
       alert(e?.message ?? "No se pudo cancelar la reserva");
@@ -244,10 +235,7 @@ export function PassScreen() {
               const date = new Date(r.timeslot.startAt).toLocaleDateString();
 
               return (
-                <div
-                  key={r.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-muted/50"
-                >
+                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       <MapPin className="w-5 h-5 text-primary" />
@@ -277,26 +265,20 @@ export function PassScreen() {
           </div>
         </Card>
 
-        {/* Historial de movimientos (mock visual) */}
-        <Card className="p-6 space-y-4 border-2 shadow-lg rounded-3xl bg-card">
+        {/* Historial / tarjetas / promos… (igual que tenías) */}
+        <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-card">
           <h2 className="text-lg font-semibold text-foreground">Historial de movimientos</h2>
-
           <div className="space-y-3">
-            {tripHistory.map((trip) => (
-              <div
-                key={trip.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-              >
+            {[
+              { id: 1, route: "Ruta 1 - Norte", amount: -1.5, type: "expense", date: "Hoy, 14:30" },
+              { id: 2, route: "Ruta 3 - Centro", amount: -1.5, type: "expense", date: "Hoy, 09:15" },
+              { id: 3, route: "Recarga en línea", amount: 20.0, type: "recharge", date: "Ayer, 18:00" },
+              { id: 4, route: "Ruta 2 - Sur", amount: -1.5, type: "expense", date: "Ayer, 16:45" },
+            ].map((trip) => (
+              <div key={trip.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${trip.type === "expense" ? "bg-destructive/10" : "bg-success/10"
-                      }`}
-                  >
-                    {trip.type === "expense" ? (
-                      <TrendingDown className="w-5 h-5 text-destructive" />
-                    ) : (
-                      <TrendingUp className="w-5 h-5 text-success" />
-                    )}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${trip.type === "expense" ? "bg-destructive/10" : "bg-success/10"}`}>
+                    {trip.type === "expense" ? <TrendingDown className="w-5 h-5 text-destructive" /> : <TrendingUp className="w-5 h-5 text-success" />}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">{trip.route}</p>
@@ -311,7 +293,6 @@ export function PassScreen() {
           </div>
         </Card>
 
-        {/* Tarjeta física */}
         <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-card">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -327,7 +308,6 @@ export function PassScreen() {
           </Button>
         </Card>
 
-        {/* Promos */}
         <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-gradient-to-r from-accent/20 to-primary/20">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">

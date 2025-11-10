@@ -9,8 +9,9 @@ import {
   getMyNotifications,
   markNotificationRead,
   markAllNotificationsRead,
-  type UiNotification,
 } from "@/lib/api";
+import type { UiNotification } from "@/types"; 
+
 import { getToken } from "@/lib/session";
 
 type Props = {

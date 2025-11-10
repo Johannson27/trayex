@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Bus, Mail, Lock } from "lucide-react";
-import type { UserRole } from "@/app/page";
+import type { UserRole } from "@/types";
+
 import { login, getMe } from "@/lib/api";
 import { saveToken, saveUser } from "@/lib/session";
 import { useRouter } from "next/navigation";
@@ -59,7 +60,7 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
       saveToken(token);
 
       try {
-        const me = await getMe(token);
+        const me = await getMe(); // ✅ ya no pasa token
         saveUser(me?.user ?? user ?? {});
       } catch {
         saveUser(user ?? {});
@@ -69,7 +70,7 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
       else localStorage.removeItem("remember_email");
 
       if (onSuccess) onSuccess();
-      else router.replace("/dashboard"); // ajusta si tu ruta de home privada es otra
+      else router.replace("/dashboard");
     } catch (e: any) {
       const msg = e?.message ?? "Error al iniciar sesión";
       if (msg.toLowerCase().includes("credenciales")) setErr("Email o contraseña incorrecta");

@@ -22,10 +22,10 @@ import { PassScreen } from "@/components/pass-screen";
 import { TripInProgressScreen } from "@/components/trip-in-progress-screen";
 import { NotificationsScreen } from "@/components/notifications-screen";
 import { ProfileScreen } from "@/components/profile-screen";
-import type { UserRole } from "@/app/page";
-import { MapWidget } from "@/components/map-widget";
+import type { UserRole } from "@/types";
 
-import { getToken, getUser, saveUser, clearToken } from "@/lib/session";
+import { MapWidget } from "@/components/map-widget";
+import { getUser, saveUser, clearToken, getToken } from "@/lib/session";
 import { getMe } from "@/lib/api";
 
 type DashboardScreenProps = {
@@ -38,15 +38,14 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
   const [activeNav, setActiveNav] = useState<NavItem>("home");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [tripInProgress, setTripInProgress] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0); // empieza en 0
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // ======== SESIÓN ========
-  const token = getToken();
-  const [user, setUser] = useState<any>(getUser()); // lo que haya en localStorage
-
+  const [user, setUser] = useState<any>(getUser());
   useEffect(() => {
+    const token = getToken();
     if (!token) return;
-    getMe(token)
+    getMe()
       .then((res) => {
         if (res?.user) {
           setUser(res.user);
@@ -54,9 +53,9 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         }
       })
       .catch(() => {
-        // si falla, mantenemos lo que hubiese en localStorage
+        // mantiene lo de localStorage
       });
-  }, [token]);
+  }, []);
 
   const displayName = useMemo(() => {
     const full = user?.student?.fullName || user?.student?.fullname;
@@ -75,19 +74,14 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
             lng: position.coords.longitude,
           });
         },
-        (error) => {
-          console.log("[v0] Geolocation error:", error);
-          // fallback (ajústalo si quieres)
+        () => {
           setUserLocation({ lat: -0.1807, lng: -78.4678 });
         }
       );
     }
   }, []);
 
-  const handleReserveRoute = (routeName: string) => {
-    setTripInProgress(routeName);
-  };
-
+  const handleReserveRoute = (routeName: string) => setTripInProgress(routeName);
   const handleEndTrip = () => {
     setTripInProgress(null);
     setActiveNav("home");
@@ -97,7 +91,6 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     return <TripInProgressScreen routeName={tripInProgress} onEndTrip={handleEndTrip} />;
   }
 
-  // Helpers para el mapa (buses y paradas de ejemplo)
   const buses = [
     ...(userLocation
       ? [{ lat: userLocation.lat + 0.0045, lng: userLocation.lng - 0.01 }]

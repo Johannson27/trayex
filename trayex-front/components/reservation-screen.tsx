@@ -7,42 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getMyReservations, cancelReservation } from "@/lib/api";
 import { getToken } from "@/lib/session";
+import type { ReservationStatus, ApiReservation, Reservation } from "@/types";
 
-// ✅ FIX: Tipos y normalizador de status
-type ReservationStatus =
-    | "PENDING"
-    | "CONFIRMED"
-    | "BOARDED"
-    | "CANCELLED"
-    | "COMPLETED"
-    | "NO_SHOW";
-
+// Normaliza el status string del backend:
 function coerceStatus(s: string): ReservationStatus {
     const allowed: ReservationStatus[] = [
-        "PENDING",
-        "CONFIRMED",
-        "BOARDED",
-        "CANCELLED",
-        "COMPLETED",
-        "NO_SHOW",
+        "PENDING", "CONFIRMED", "BOARDED", "CANCELLED", "COMPLETED", "NO_SHOW",
     ];
     return (allowed as string[]).includes(s) ? (s as ReservationStatus) : "PENDING";
 }
 
-type Reservation = {
-    id: string;
-    status: ReservationStatus;
-    offlineToken?: string | null;
-    createdAt: string;
-    timeslot: {
-        id: string;
-        startAt: string;
-        endAt: string;
-        zoneId: string;
-        zone: { name: string };
-    };
-    stop: { id: string; name: string };
-};
+// Transformar ApiReservation -> Reservation
+function toReservation(r: ApiReservation): Reservation {
+    return { ...r, status: coerceStatus(r.status) };
+}
 
 export function ReservationsScreen() {
     const token = getToken();
@@ -61,16 +39,10 @@ export function ReservationsScreen() {
         setLoading(true);
         setErr(null);
         try {
-            const { reservations } = await getMyReservations(token);
-
-            // ✅ FIX: normaliza el status string -> ReservationStatus
+            const { reservations } = await getMyReservations(token); // ← token OBLIGATORIO
             const safe: Reservation[] = (reservations ?? [])
                 .filter((r: any) => r && r.id && r.timeslot && r.stop)
-                .map((r: any) => ({
-                    ...r,
-                    status: coerceStatus(r.status),
-                }));
-
+                .map((r: any) => ({ ...r, status: coerceStatus(r.status) }));
             setItems(safe);
         } catch (e: any) {
             setErr(e?.message ?? "No se pudieron cargar las reservas");
@@ -83,8 +55,7 @@ export function ReservationsScreen() {
         fetchData();
     }, [fetchData]);
 
-    const canCancel = (s: ReservationStatus) =>
-        s === "PENDING" || s === "CONFIRMED";
+    const canCancel = (s: ReservationStatus) => s === "PENDING" || s === "CONFIRMED";
 
     const badgeForStatus = (s: ReservationStatus) => {
         switch (s) {
@@ -119,9 +90,9 @@ export function ReservationsScreen() {
 
     const onCancel = async (id: string) => {
         if (!token) return;
-        setBusyId(id);
         try {
-            await cancelReservation(token, id);
+            setBusyId(id);
+            await cancelReservation(token, id); // ← (token, id)
             await fetchData();
         } catch (e: any) {
             alert(e?.message ?? "No se pudo cancelar la reserva");
@@ -129,14 +100,11 @@ export function ReservationsScreen() {
             setBusyId(null);
         }
     };
-
     const upcoming = useMemo(
         () =>
             items
                 .slice()
-                .sort((a, b) =>
-                    (a?.timeslot?.startAt ?? "").localeCompare(b?.timeslot?.startAt ?? "")
-                ),
+                .sort((a, b) => (a?.timeslot?.startAt ?? "").localeCompare(b?.timeslot?.startAt ?? "")),
         [items]
     );
 
@@ -162,11 +130,7 @@ export function ReservationsScreen() {
                         <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
                     </Button>
                 </div>
-                {err && (
-                    <p className="mt-3 text-xs text-red-600 bg-red-100/60 rounded-md p-2">
-                        {err}
-                    </p>
-                )}
+                {err && <p className="mt-3 text-xs text-red-600 bg-red-100/60 rounded-md p-2">{err}</p>}
             </div>
 
             {/* Content */}
@@ -174,9 +138,7 @@ export function ReservationsScreen() {
                 {!loading && items.length === 0 && (
                     <Card className="p-6 rounded-3xl border-2 text-center space-y-3">
                         <HelpCircle className="w-8 h-8 mx-auto text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                            Aún no tienes reservas activas.
-                        </p>
+                        <p className="text-sm text-muted-foreground">Aún no tienes reservas activas.</p>
                         <p className="text-xs text-muted-foreground">
                             Ve a <span className="font-medium">Rutas</span> para crear una.
                         </p>
@@ -202,9 +164,7 @@ export function ReservationsScreen() {
                                             <CalendarClock className="w-6 h-6 text-primary" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-foreground">
-                                                {zoneName}
-                                            </h3>
+                                            <h3 className="font-bold text-lg text-foreground">{zoneName}</h3>
                                             <p className="text-sm text-muted-foreground flex items-center gap-2">
                                                 <span>Reserva #{r.id.slice(0, 6)}</span> {badgeForStatus(r.status)}
                                             </p>
@@ -246,9 +206,7 @@ export function ReservationsScreen() {
 
                                 {/* Actions */}
                                 <div className="pt-2 border-t border-border flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">
-                                        Creada: {fmtDate(r?.createdAt)}
-                                    </span>
+                                    <span className="text-xs text-muted-foreground">Creada: {fmtDate(r?.createdAt)}</span>
 
                                     {canCancel(r.status) ? (
                                         <Button

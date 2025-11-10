@@ -1,5 +1,6 @@
 // src/lib/api.ts
 import { getToken, saveToken, clearToken } from "@/lib/session";
+import { UiNotification } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -40,10 +41,8 @@ async function api<T>(path: string, opts: RequestInit = {}, retry = true): Promi
     });
 
     if (res.status === 401 && token && retry) {
-        // intentamos refrescar
         const newToken = await refreshSession(token);
         if (newToken) {
-            // reintenta la solicitud original, ahora con el token nuevo
             const res2 = await fetch(`${BASE}${path}`, {
                 ...opts,
                 headers: {
@@ -53,12 +52,15 @@ async function api<T>(path: string, opts: RequestInit = {}, retry = true): Promi
             });
             if (!res2.ok) {
                 let msg = `HTTP ${res2.status}`;
-                try { const j = await res2.json(); if (j?.error) msg = j.error; } catch { }
+                try {
+                    const j = await res2.json();
+                    if (j?.error) msg = j.error;
+                } catch { }
                 throw new Error(msg);
             }
             return (await res2.json()) as T;
         } else {
-            // refresh falló: forzamos logout “silencioso”
+            // refresh falló: limpiar sesión silenciosamente
             clearToken();
         }
     }
@@ -77,11 +79,15 @@ async function api<T>(path: string, opts: RequestInit = {}, retry = true): Promi
 
 // -------- AUTH --------
 export async function login(email: string, password: string) {
-    const out = await api<{ token: string; user?: any }>("/auth/login", {
-        method: "POST",
-        headers: JSON_HEADERS,
-        body: JSON.stringify({ email, password }),
-    }, /*retry*/ false); // login no intenta refresh
+    const out = await api<{ token: string; user?: any }>(
+        "/auth/login",
+        {
+            method: "POST",
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ email, password }),
+        },
+    /*retry*/ false // login no intenta refresh
+    );
     if (out?.token) saveToken(out.token);
     return out;
 }
@@ -98,16 +104,21 @@ export async function register(
         emergencyContact?: string | null;
     }
 ) {
-    const out = await api<{ token: string; user?: any }>("/auth/register", {
-        method: "POST",
-        headers: JSON_HEADERS,
-        body: JSON.stringify({ email, password, fullName, ...(profile ?? {}) }),
-    }, false);
+    const out = await api<{ token: string; user?: any }>(
+        "/auth/register",
+        {
+            method: "POST",
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ email, password, fullName, ...(profile ?? {}) }),
+        },
+        false
+    );
     if (out?.token) saveToken(out.token);
     return out;
 }
 
-export async function getMe(token: string) {
+export async function getMe(token?: string) {
+    // api() ya toma el token de localStorage internamente
     return api<{ user: any }>("/auth/me");
 }
 
@@ -116,17 +127,14 @@ export async function getMyProfile(token: string) {
     return api<{ user: any; profile: any | null }>("/auth/me/profile");
 }
 
-export async function updateMyProfile(
-    token: string,
-    data: {
-        fullName?: string;
-        bloodType?: string;
-        idNumber?: string;
-        university?: string;
-        emergencyName?: string;
-        emergencyContact?: string;
-    }
-) {
+export async function updateMyProfile(token: string, data: {
+    fullName?: string;
+    bloodType?: string;
+    idNumber?: string;
+    university?: string;
+    emergencyName?: string;
+    emergencyContact?: string;
+}) {
     return api<{ profile: any }>("/auth/me/profile", {
         method: "PUT",
         headers: JSON_HEADERS,
@@ -201,16 +209,13 @@ export async function getMyReservations(token: string) {
 }
 
 export async function cancelReservation(token: string, reservationId: string) {
-    return api<{ ok: boolean; reservation: any }>(`/reservations/${reservationId}/cancel`, {
-        method: "POST",
-    });
+    return api<{ ok: boolean; reservation: any }>(
+        `/reservations/${reservationId}/cancel`,
+        { method: "POST" }
+    );
 }
 
-/** Crear reserva REAL (con timeslot/stop) -> POST /reservations */
-export async function createReservation(
-    token: string,
-    params: { timeslotId: string; stopId: string }
-) {
+export async function createReservation(token: string, params: { timeslotId: string; stopId: string; }) {
     return api<{ reservation: any }>(`/reservations`, {
         method: "POST",
         headers: JSON_HEADERS,
@@ -218,8 +223,7 @@ export async function createReservation(
     });
 }
 
-/** Reserva rápida por ruta -> POST /reservations/quick */
-export async function createQuickReservation(token: string, routeId: string) {
+export async function createQuickReservation(routeId: string) {
     return api<{ reservation: any }>(`/reservations/quick`, {
         method: "POST",
         headers: JSON_HEADERS,
@@ -228,21 +232,15 @@ export async function createQuickReservation(token: string, routeId: string) {
 }
 
 // --- NOTIFICATIONS ---
-export type UiNotification = {
-    id: string;
-    title: string;
-    body: string;
-    channel: string;
-    sentAt: string | null;
-    read: boolean;
-};
 
 export async function getMyNotifications(token: string) {
-    return api<{ notifications: UiNotification[] }>("/me/notifications");
+    return api<{ notifications: import("@/types").UiNotification[] }>("/me/notifications");
 }
+
 export async function markNotificationRead(token: string, id: string) {
     return api<{ ok: boolean }>(`/notifications/${id}/read`, { method: "POST" });
 }
+
 export async function markAllNotificationsRead(token: string) {
     return api<{ ok: boolean }>(`/notifications/read-all`, { method: "POST" });
 }

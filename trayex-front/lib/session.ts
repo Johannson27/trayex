@@ -7,12 +7,10 @@ export function saveToken(token: string) {
     if (typeof window === "undefined") return;
     localStorage.setItem(TOKEN_KEY, token);
 }
-
 export function getToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(TOKEN_KEY);
 }
-
 export function clearToken() {
     if (typeof window === "undefined") return;
     localStorage.removeItem(TOKEN_KEY);
@@ -22,7 +20,6 @@ export function saveUser(user: any) {
     if (typeof window === "undefined") return;
     localStorage.setItem(USER_KEY, JSON.stringify(user ?? {}));
 }
-
 export function getUser(): any | null {
     if (typeof window === "undefined") return null;
     try {
@@ -32,7 +29,6 @@ export function getUser(): any | null {
         return null;
     }
 }
-
 export function clearUser() {
     if (typeof window === "undefined") return;
     localStorage.removeItem(USER_KEY);
@@ -44,9 +40,7 @@ export function clearAllAuth() {
     try {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        // por si activaste “Recordar correo”
         localStorage.removeItem(REMEMBER_KEY);
-        // por si en algún momento se guardó algo en sessionStorage
         sessionStorage.removeItem(TOKEN_KEY);
         sessionStorage.removeItem(USER_KEY);
     } catch { }

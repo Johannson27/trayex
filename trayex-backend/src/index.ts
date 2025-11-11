@@ -34,6 +34,13 @@ app.use(reservationRouter);    // /reservations, /me/reservations (según lo ten
 app.use(zonesRouter);          // /zones, /zones/:id/stops, /zones/:id/timeslots
 app.use(notificationsRouter);  // /me/notifications, /notifications/:id/read, etc.
 
+app.get("/health", (_req, res) => res.status(200).send("ok"));
+
+
+app.use(cors({
+  origin: ["http://localhost:3000", "https://trayex.vercel.app"],
+  credentials: true
+}));
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`);

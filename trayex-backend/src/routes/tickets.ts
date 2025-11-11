@@ -5,7 +5,9 @@ export const ticketRouter = Router();
 
 ticketRouter.get('/tickets/:reservationId/qr', (req, res) => {
   const { reservationId } = req.params;
-  const token = signQr({ rid: reservationId, typ: 'BOARDING' }, '10m');
+  const token = signQr({ rid: reservationId, typ: "BOARDING" }, 10 * 60);
+
+
   res.json({ reservationId, qr: token });
 });
 

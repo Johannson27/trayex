@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import "./globals.css";
+import Script from "next/script"; 
 
 export const metadata: Metadata = {
   title: "TRAYEX",
@@ -24,10 +24,19 @@ export const viewport: Viewport = {
   themeColor: "#204284"
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
   return (
     <html lang="es">
-      <body className="font-sans antialiased">{children}</body>
+      <body>
+        {/* Carga el script DEPUÉS de que hidrata la app */}
+        <Script
+          id="gmaps"
+          strategy="afterInteractive"
+          src={`https://maps.googleapis.com/maps/api/js?key=${key}`}
+        />
+        {children}
+      </body>
     </html>
   );
 }
-

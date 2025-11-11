@@ -1,16 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bus, MapPin, Clock, Heart, ChevronRight, Filter } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bus, MapPin, Clock, Heart, ChevronRight, Filter, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchRoutes, listZones, listStops, listTimeslots, createReservation, getMyReservations } from "@/lib/api";
+import { listZones, listStops, listTimeslots, createReservation, getMyReservations } from "@/lib/api";
 import { getToken } from "@/lib/session";
+import { dsFetchRoutes, dsFetchStops } from "@/lib/dataSource";
 
 type Status = "ACTIVE" | "SAFE" | "INCIDENT";
 
-interface RouteRow {
+export type StopRow = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  isSafe: boolean;
+};
+
+export type RouteRow = {
   id: string;
   name: string;
   description: string | null;
@@ -19,28 +28,37 @@ interface RouteRow {
   estimatedTime: string;
   capacity: string;
   isFavorite: boolean;
-}
-
-const timeBlocks = [
-  { id: "morning", label: "Mañana", time: "06:00 - 12:00" },
-  { id: "midday", label: "Mediodía", time: "12:00 - 15:00" },
-  { id: "afternoon", label: "Tarde", time: "15:00 - 19:00" },
-  { id: "night", label: "Noche", time: "19:00 - 23:00" },
-];
+  // 👇 NUEVO: paradas en orden (si vienen en el JSON OSM)
+  stops?: StopRow[];
+};
 
 interface RoutesScreenProps {
   onReserveRoute?: (routeName: string) => void;
+  onPlannedTrip?: (payload: {
+    routeId: string;
+    from: { lat: number; lng: number; name?: string };
+    to: { lat: number; lng: number; name?: string };
+    stopsToShow: { lat: number; lng: number; name?: string }[];
+    path: { lat: number; lng: number }[]; // 👈 NUEVO
+  }) => void;
 }
 
-export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
+const PAGE_SIZE = 12;
+
+export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProps) {
   const token = getToken();
+
   const [routes, setRoutes] = useState<RouteRow[]>([]);
+  const [allStops, setAllStops] = useState<StopRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [selectedTimeBlock, setSelectedTimeBlock] = useState<string | null>(null);
+
+  // Filtros UI
+  const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Modal state
+  // Modal reserva clásica
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<RouteRow | null>(null);
   const [zones, setZones] = useState<Array<{ id: string; name: string }>>([]);
@@ -51,13 +69,22 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
   const [timeslotId, setTimeslotId] = useState<string>("");
   const [creating, setCreating] = useState(false);
 
+  // Modal PLAN (O/D sobre OSM)
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [planRoute, setPlanRoute] = useState<RouteRow | null>(null);
+  const [fromQuery, setFromQuery] = useState("");
+  const [toQuery, setToQuery] = useState("");
+  const [fromStop, setFromStop] = useState<StopRow | null>(null);
+  const [toStop, setToStop] = useState<StopRow | null>(null);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       setErr(null);
       try {
-        const { routes } = await fetchRoutes();
-        setRoutes(routes);
+        const [rts, stps] = await Promise.all([dsFetchRoutes(), dsFetchStops()]);
+        setRoutes(rts || []);
+        setAllStops(stps || []);
       } catch (e: any) {
         setErr(e?.message ?? "No se pudieron cargar las rutas");
       } finally {
@@ -70,18 +97,19 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
     setRoutes((rs) => rs.map((r) => (r.id === routeId ? { ...r, isFavorite: !r.isFavorite } : r)));
   };
 
-  const getStatusPill = (status: Status) => {
-    if (status === "ACTIVE") return <span className="text-green-500">🟢</span>;
-    if (status === "SAFE") return <span className="text-blue-500">🔵</span>;
-    return <span className="text-red-500">🔴</span>;
-  };
+  // 🔎 filtro
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return routes;
+    return routes.filter((r) => {
+      if (r.name.toLowerCase().includes(q)) return true;
+      return r.mainStops.some((s) => s.toLowerCase().includes(q));
+    });
+  }, [routes, search]);
 
-  const getStatusText = (status: Status) => {
-    if (status === "ACTIVE") return "Bus activo";
-    if (status === "SAFE") return "Parada segura";
-    return "Incidente";
-  };
+  const shown = useMemo(() => (showAll ? filtered : filtered.slice(0, PAGE_SIZE)), [filtered, showAll]);
 
+  // reserva clásica
   const openReserveModal = async (route: RouteRow) => {
     if (route.status === "INCIDENT") return;
     if (!token) return alert("Inicia sesión para reservar.");
@@ -96,12 +124,9 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
       setZoneId(defaultZone);
 
       if (defaultZone) {
-        const [{ stops }, { timeslots }] = await Promise.all([
-          listStops(defaultZone),
-          listTimeslots(defaultZone),
-        ]);
-        setStops(stops.map(s => ({ id: s.id, name: s.name })));
-        setTimeslots(timeslots.map(t => ({ id: t.id, startAt: t.startAt, endAt: t.endAt })));
+        const [{ stops }, { timeslots }] = await Promise.all([listStops(defaultZone), listTimeslots(defaultZone)]);
+        setStops(stops.map((s) => ({ id: s.id, name: s.name })));
+        setTimeslots(timeslots.map((t) => ({ id: t.id, startAt: t.startAt, endAt: t.endAt })));
         setStopId(stops[0]?.id || "");
         setTimeslotId(timeslots[0]?.id || "");
       }
@@ -110,86 +135,104 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
     }
   };
 
-  const onChangeZone = async (zid: string) => {
-    setZoneId(zid);
-    setStopId("");
-    setTimeslotId("");
-    if (!zid) {
-      setStops([]);
-      setTimeslots([]);
-      return;
-    }
-    const [{ stops }, { timeslots }] = await Promise.all([
-      listStops(zid),
-      listTimeslots(zid),
-    ]);
-    setStops(stops.map(s => ({ id: s.id, name: s.name })));
-    setTimeslots(timeslots.map(t => ({ id: t.id, startAt: t.startAt, endAt: t.endAt })));
-    setStopId(stops[0]?.id || "");
-    setTimeslotId(timeslots[0]?.id || "");
+  // plan O/D
+  const openPlanModal = (route: RouteRow) => {
+    setPlanRoute(route);
+    setFromQuery("");
+    setToQuery("");
+    setFromStop(null);
+    setToStop(null);
+    setShowPlanModal(true);
   };
 
-  const confirmReservation = async () => {
-    if (!token) return alert("Inicia sesión para reservar.");
-    if (!timeslotId || !stopId) return alert("Elige un horario y una parada.");
-
-    try {
-      setCreating(true);
-      await createReservation(token, { timeslotId, stopId });
-
-      // opcional: refrescar reservas
-      await getMyReservations(token);
-
-      setShowReserveModal(false);
-      if (selectedRoute) onReserveRoute?.(selectedRoute.name);
-    } catch (e: any) {
-      const msg = String(e?.message || "");
-      if (/capacidad/i.test(msg)) {
-        alert("La capacidad de ese horario ya está llena. Elige otro horario.");
-      } else if (/timeslot|stop/i.test(msg)) {
-        alert("Horario o parada inválidos. Intenta seleccionarlos de nuevo.");
-      } else {
-        alert(msg || "No se pudo crear la reserva");
-      }
-    } finally {
-      setCreating(false);
-    }
+  // sugerencias de paradas por texto
+  const suggestStops = (q: string) => {
+    const s = q.trim().toLowerCase();
+    if (!s) return [];
+    return allStops
+      .filter((st) => st.name.toLowerCase().includes(s))
+      .slice(0, 8);
   };
 
+  // corta el tramo A→B usando el orden de paradas de la ruta
+  const slicePath = (route: RouteRow, fromId: string, toId: string) => {
+    const arr = route.stops ?? [];
+    const a = arr.findIndex((x) => x.id === fromId);
+    const b = arr.findIndex((x) => x.id === toId);
+    if (a === -1 || b === -1) return null;
+    if (a >= b) return null; // asumimos sentido A→B
+    return arr.slice(a, b + 1).map((s) => ({ lat: s.lat, lng: s.lng }));
+  };
+
+  const confirmPlan = () => {
+    if (!planRoute || !fromStop || !toStop) return;
+
+    const path = slicePath(planRoute, fromStop.id, toStop.id) ?? [
+      // fallback: recta si no encontramos el orden
+      { lat: fromStop.lat, lng: fromStop.lng },
+      { lat: toStop.lat, lng: toStop.lng },
+    ];
+
+    const stopsToShow = (planRoute.stops ?? [])
+      .filter((s) => path.some((p) => p.lat === s.lat && p.lng === s.lng))
+      .map((s) => ({ lat: s.lat, lng: s.lng, name: s.name }));
+
+    onPlannedTrip?.({
+      routeId: planRoute.id,
+      from: { lat: fromStop.lat, lng: fromStop.lng, name: `Origen: ${fromStop.name}` },
+      to: { lat: toStop.lat, lng: toStop.lng, name: `Destino: ${toStop.name}` },
+      stopsToShow,
+      path,
+    });
+
+    setShowPlanModal(false);
+  };
+
+  // === UI ===
   return (
     <div className="flex-1 overflow-y-auto bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Rutas y Reservas</h1>
+            <h1 className="text-2xl font-bold text-foreground">Rutas</h1>
             <p className="text-sm text-muted-foreground">
-              {loading ? "Cargando..." : "Explora y reserva tu viaje"}
+              {loading ? "Cargando..." : `Mostrando ${shown.length} de ${filtered.length}`}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full bg-transparent"
-            onClick={() => setShowFilters(!showFilters)}
-          >
+          <Button variant="outline" size="icon" className="rounded-full bg-transparent" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="w-5 h-5" />
           </Button>
+        </div>
+
+        {/* 🔎 Buscador */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setShowAll(false);
+            }}
+            placeholder="Buscar ruta o parada principal…"
+            className="w-full pl-10 pr-3 h-11 rounded-xl border bg-background"
+          />
         </div>
 
         {err && <p className="text-xs text-red-600 bg-red-100/60 rounded-md p-2">{err}</p>}
       </div>
 
-      {/* Routes List */}
+      {/* Listado */}
       <div className="p-4 space-y-4">
-        {!loading && routes.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center">No hay rutas disponibles.</p>
+        {!loading && shown.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center">No hay coincidencias.</p>
         )}
-        {routes.map((route, index) => (
+
+        {shown.map((route, index) => (
           <Card
             key={route.id}
             className="overflow-hidden border-2 rounded-3xl hover:shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-bottom"
-            style={{ animationDelay: `${index * 100}ms` }}
+            style={{ animationDelay: `${index * 50}ms` }}
           >
             <div className="p-5 space-y-4">
               <div className="flex items-start justify-between">
@@ -202,10 +245,7 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
                     <p className="text-sm text-muted-foreground">{route.description}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleFavorite(route.id)}
-                  className="flex-shrink-0 p-2 rounded-full hover:bg-muted transition-colors"
-                >
+                <button onClick={() => toggleFavorite(route.id)} className="flex-shrink-0 p-2 rounded-full hover:bg-muted transition-colors">
                   <Heart className={`w-5 h-5 ${route.isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
                 </button>
               </div>
@@ -228,10 +268,6 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
               </div>
 
               <div className="flex items-center gap-3 pt-2 border-t border-border">
-                <div className="flex items-center gap-1.5">
-                  {getStatusPill(route.status)}
-                  <span className="text-xs font-medium text-muted-foreground">{getStatusText(route.status)}</span>
-                </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   <span className="text-xs font-medium">{route.estimatedTime}</span>
@@ -242,90 +278,108 @@ export function RoutesScreen({ onReserveRoute }: RoutesScreenProps) {
                 </div>
               </div>
 
-              <Button
-                className="w-full h-12 rounded-2xl font-semibold bg-accent hover:bg-accent/90 text-accent-foreground"
-                disabled={route.status === "INCIDENT"}
-                onClick={() => openReserveModal(route)}
-              >
-                {route.status === "INCIDENT" ? "No disponible" : "Reservar"}
-                {route.status !== "INCIDENT" && <ChevronRight className="w-5 h-5 ml-1" />}
-              </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Planificar (OSM) */}
+                <Button className="h-11 rounded-2xl font-semibold" onClick={() => openPlanModal(route)}>
+                  Planificar (Elegir origen/destino)
+                  <ChevronRight className="w-5 h-5 ml-1" />
+                </Button>
+
+                {/* (Opcional) Reservar clásico contra API */}
+                <Button
+                  variant="outline"
+                  className="h-11 rounded-2xl font-semibold"
+                  disabled={route.status === "INCIDENT"}
+                  onClick={() => openReserveModal(route)}
+                >
+                  {route.status === "INCIDENT" ? "No disponible" : "Reservar (API)"}
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
+
+        {filtered.length > PAGE_SIZE && !showAll && (
+          <div className="pt-2">
+            <Button variant="outline" className="w-full rounded-xl" onClick={() => setShowAll(true)}>
+              Ver más rutas
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Modal simple de reserva */}
-      {showReserveModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
-          onClick={() => setShowReserveModal(false)}
-        >
-          <Card
-            className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold text-foreground">Reservar {selectedRoute?.name}</h2>
+      {/* ===== Modal PLAN O/D (OSM) ===== */}
+      {showPlanModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={() => setShowPlanModal(false)}>
+          <Card className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold text-foreground">Planificar en {planRoute?.name}</h2>
 
-            {/* Zona */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Zona</label>
-              <select
+            {/* Origen */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Origen</label>
+              <input
                 className="w-full border rounded-xl p-2 bg-background"
-                value={zoneId}
-                onChange={(e) => onChangeZone(e.target.value)}
-              >
-                {zones.map((z) => (
-                  <option key={z.id} value={z.id}>{z.name}</option>
-                ))}
-              </select>
+                placeholder="Ej. UAM"
+                value={fromQuery}
+                onChange={(e) => {
+                  setFromQuery(e.target.value);
+                  setFromStop(null);
+                }}
+              />
+              {fromQuery && !fromStop && (
+                <div className="border rounded-xl divide-y max-h-44 overflow-auto">
+                  {suggestStops(fromQuery).map((s) => (
+                    <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-muted" onClick={() => setFromStop(s)}>
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {fromStop && <p className="text-xs text-muted-foreground">Seleccionado: {fromStop.name}</p>}
             </div>
 
-            {/* Stop */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Parada</label>
-              <select
+            {/* Destino */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Destino</label>
+              <input
                 className="w-full border rounded-xl p-2 bg-background"
-                value={stopId}
-                onChange={(e) => setStopId(e.target.value)}
-              >
-                {stops.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+                placeholder="Ej. Mercado Roberto Huembes"
+                value={toQuery}
+                onChange={(e) => {
+                  setToQuery(e.target.value);
+                  setToStop(null);
+                }}
+              />
+              {toQuery && !toStop && (
+                <div className="border rounded-xl divide-y max-h-44 overflow-auto">
+                  {suggestStops(toQuery).map((s) => (
+                    <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-muted" onClick={() => setToStop(s)}>
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {toStop && <p className="text-xs text-muted-foreground">Seleccionado: {toStop.name}</p>}
             </div>
 
-            {/* Timeslot */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Horario</label>
-              <select
-                className="w-full border rounded-xl p-2 bg-background"
-                value={timeslotId}
-                onChange={(e) => setTimeslotId(e.target.value)}
-              >
-                {timeslots.map((t) => {
-                  const start = new Date(t.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                  const end = new Date(t.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                  return (
-                    <option key={t.id} value={t.id}>{start} - {end}</option>
-                  );
-                })}
-              </select>
-            </div>
-
-            {/* Botones */}
             <div className="flex gap-2 pt-2">
-              <Button
-                className="flex-1 rounded-xl"
-                onClick={confirmReservation}
-                disabled={!timeslotId || !stopId || creating}
-              >
-                {creating ? "Reservando..." : "Confirmar reserva"}
+              <Button className="flex-1 rounded-xl" onClick={confirmPlan} disabled={!fromStop || !toStop}>
+                Mostrar en el mapa
               </Button>
-              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowReserveModal(false)}>
+              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowPlanModal(false)}>
                 Cancelar
               </Button>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ===== Modal reserva clásica (si la usas) ===== */}
+      {showReserveModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={() => setShowReserveModal(false)}>
+          <Card className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold text-foreground">Reservar {selectedRoute?.name}</h2>
+            {/* aquí va tu UI de zonas/paradas/horarios si la mantienes */}
           </Card>
         </div>
       )}

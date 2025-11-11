@@ -7,7 +7,8 @@
     "dev": "next dev",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "start": "next start -p 3000"
+    "start": "next start -p 3000",
+    "osm:build": "node scripts/osm-build.mjs --stops ./raw/managua-stops.geojson --routes ./raw/managua-bus-routes.json --out-stops ./public/data/managua-stops.json --out-routes ./public/data/managua-routes.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

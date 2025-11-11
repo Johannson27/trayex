@@ -1,206 +1,211 @@
 // src/components/map-widget.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-/** Tipos */
 type LatLng = { lat: number; lng: number };
-export type MapMarker = { id: string; lat: number; lng: number; label?: string };
-
 type MapWidgetProps = {
     center: LatLng;
     zoom?: number;
-
-    /** Marcadores genéricos (lo que usas en Dashboard) */
-    markers?: MapMarker[];
-
-    /** Compat con la versión anterior */
-    buses?: LatLng[];
-    stops?: LatLng[];
-
-    className?: string;
-
-    /** Soporta style y containerStyle (como en tu Dashboard) */
     style?: React.CSSProperties;
-    containerStyle?: React.CSSProperties;
+    buses?: LatLng[];
+    stops?: (LatLng & { name?: string })[];
+    path?: LatLng[];
+    origin?: LatLng | null;
+    destination?: LatLng | null;
+    stopsOnPath?: (LatLng & { name?: string })[];
 };
-
-declare global {
-    interface Window {
-        __gmapsLoader?: Promise<void>;
-    }
-    // Si no tienes @types/google.maps, puedes descomentar:
-    // var google: any;
-}
-
-/** Carga la API de Google Maps una sola vez en el navegador */
-function loadGoogleMaps(apiKey: string): Promise<void> {
-    if (typeof window === "undefined") return Promise.resolve();
-    if (window.google?.maps) return Promise.resolve();
-
-    if (!window.__gmapsLoader) {
-        window.__gmapsLoader = new Promise<void>((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
-                apiKey
-            )}&libraries=marker&loading=async`; // <-- loading=async
-            script.async = true;
-            script.defer = true;
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error("No se pudo cargar Google Maps"));
-            document.head.appendChild(script);
-        });
-    }
-    return window.__gmapsLoader!;
-}
 
 export function MapWidget({
     center,
-    zoom = 14,
-    markers = [],
+    zoom = 13,
+    style,
     buses = [],
     stops = [],
-    className,
-    style,
-    containerStyle,
+    path,
+    origin = null,
+    destination = null,
+    stopsOnPath = [],
 }: MapWidgetProps) {
-    const ref = useRef<HTMLDivElement | null>(null);
-    const markersRef = useRef<google.maps.Marker[]>([]);
     const mapRef = useRef<google.maps.Map | null>(null);
+    const [ready, setReady] = useState(false);
 
+    const busMarkersRef = useRef<google.maps.Marker[]>([]);
+    const stopMarkersRef = useRef<google.maps.Marker[]>([]);
+    const routeMarkersRef = useRef<google.maps.Marker[]>([]);
+    const polylineRef = useRef<google.maps.Polyline | null>(null);
+
+    // Espera a que el script de Google Maps esté disponible
     useEffect(() => {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-        if (!apiKey) {
-            console.warn("Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
-            return;
-        }
+        let mounted = true;
 
-        let cancelled = false;
+        const ensureGoogle = () => {
+            if (typeof window !== "undefined" && (window as any).google?.maps) {
+                mounted && setReady(true);
+                return true;
+            }
+            return false;
+        };
 
-        loadGoogleMaps(apiKey)
-            .then(() => {
-                if (cancelled || !ref.current) return;
+        if (ensureGoogle()) return;
 
-                // Crear o actualizar el mapa
-                if (!mapRef.current) {
-                    mapRef.current = new google.maps.Map(ref.current, {
-                        center,
-                        zoom,
-                        // mapId: "OPCIONAL_SI_TIENES",
-                        disableDefaultUI: true,
-                    });
-                } else {
-                    mapRef.current.setCenter(center);
-                    mapRef.current.setZoom(zoom);
-                }
+        // reintenta varias veces durante ~2s
+        const id = setInterval(() => {
+            if (ensureGoogle()) clearInterval(id);
+        }, 100);
 
-                // Limpiar marcadores anteriores
-                markersRef.current.forEach((m) => m.setMap(null));
-                markersRef.current = [];
-
-                // 1) marcador central (usuario)
-                markersRef.current.push(
-                    new google.maps.Marker({
-                        position: center,
-                        map: mapRef.current!,
-                        title: "Tú",
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: "#2563eb",
-                            fillOpacity: 1,
-                            strokeColor: "#ffffff",
-                            strokeWeight: 2,
-                        },
-                    })
-                );
-
-                // 2) marcadores genéricos (azul oscuro)
-                markers.forEach((m) => {
-                    markersRef.current.push(
-                        new google.maps.Marker({
-                            position: { lat: m.lat, lng: m.lng },
-                            map: mapRef.current!,
-                            title: m.label ?? m.id,
-                            label: m.label,
-                            icon: {
-                                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                                scale: 6,
-                                fillColor: "#1e3a8a",
-                                fillOpacity: 1,
-                                strokeColor: "#ffffff",
-                                strokeWeight: 1.5,
-                            },
-                        })
-                    );
-                });
-
-                // 3) Compat: buses (verde)
-                buses.forEach((b, i) => {
-                    markersRef.current.push(
-                        new google.maps.Marker({
-                            position: b,
-                            map: mapRef.current!,
-                            title: `Bus ${i + 1}`,
-                            icon: {
-                                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                                scale: 6,
-                                fillColor: "#16a34a",
-                                fillOpacity: 1,
-                                strokeColor: "#ffffff",
-                                strokeWeight: 1.5,
-                            },
-                        })
-                    );
-                });
-
-                // 4) Compat: paradas (amarillo)
-                stops.forEach((s, i) => {
-                    markersRef.current.push(
-                        new google.maps.Marker({
-                            position: s,
-                            map: mapRef.current!,
-                            title: `Parada ${i + 1}`,
-                            icon: {
-                                path: google.maps.SymbolPath.CIRCLE,
-                                scale: 6,
-                                fillColor: "#f59e0b",
-                                fillOpacity: 1,
-                                strokeColor: "#ffffff",
-                                strokeWeight: 1.5,
-                            },
-                        })
-                    );
-                });
-            })
-            .catch((err) => {
-                console.error("[MapWidget] Error:", err);
-            });
+        // por si el script dispara onload
+        const handler = () => ensureGoogle();
+        window.addEventListener("load", handler);
 
         return () => {
-            cancelled = true;
-            markersRef.current.forEach((m) => m.setMap(null));
-            markersRef.current = [];
+            mounted = false;
+            clearInterval(id);
+            window.removeEventListener("load", handler);
         };
-    }, [
-        center.lat,
-        center.lng,
-        zoom,
-        JSON.stringify(markers),
-        JSON.stringify(buses),
-        JSON.stringify(stops),
-    ]);
+    }, []);
+
+    // Inicializa o recentra mapa
+    useEffect(() => {
+        if (!ready) return;
+        const el = document.getElementById("trayex-map") as HTMLElement | null;
+        if (!el) return;
+
+        if (!mapRef.current) {
+            mapRef.current = new google.maps.Map(el, {
+                center,
+                zoom,
+                disableDefaultUI: true,
+            });
+        } else {
+            mapRef.current.setCenter(center);
+        }
+    }, [ready, center, zoom]);
+
+    const clearMarkers = (ref: React.MutableRefObject<google.maps.Marker[]>) => {
+        ref.current.forEach((m) => m.setMap(null));
+        ref.current = { current: [] } as any;
+    };
+
+    // Buses
+    useEffect(() => {
+        if (!ready || !mapRef.current) return;
+        clearMarkers(busMarkersRef);
+        busMarkersRef.current = buses.map(
+            (p) =>
+                new google.maps.Marker({
+                    position: p,
+                    map: mapRef.current!,
+                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 5 },
+                    title: "Bus",
+                })
+        );
+    }, [ready, buses]);
+
+    // Paradas sueltas (si las usas)
+    useEffect(() => {
+        if (!ready || !mapRef.current) return;
+        clearMarkers(stopMarkersRef);
+        stopMarkersRef.current = stops.map(
+            (p) =>
+                new google.maps.Marker({
+                    position: p,
+                    map: mapRef.current!,
+                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 3 },
+                    title: p.name ?? "Parada",
+                })
+        );
+    }, [ready, stops]);
+
+    // Polilínea + origen/destino + paradas del tramo
+    useEffect(() => {
+        if (!ready || !mapRef.current) return;
+
+        if (polylineRef.current) {
+            polylineRef.current.setMap(null);
+            polylineRef.current = null;
+        }
+        clearMarkers(routeMarkersRef);
+
+        if (path && path.length > 1) {
+            polylineRef.current = new google.maps.Polyline({
+                path,
+                strokeOpacity: 1,
+                strokeWeight: 4,
+                map: mapRef.current,
+            });
+        }
+
+        if (origin) {
+            routeMarkersRef.current.push(
+                new google.maps.Marker({
+                    position: origin,
+                    map: mapRef.current!,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 7,
+                        fillColor: "#10B981",
+                        fillOpacity: 1,
+                        strokeColor: "#0B815A",
+                        strokeWeight: 2,
+                    },
+                    title: "Inicio",
+                })
+            );
+        }
+
+        if (destination) {
+            routeMarkersRef.current.push(
+                new google.maps.Marker({
+                    position: destination,
+                    map: mapRef.current!,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 7,
+                        fillColor: "#EF4444",
+                        fillOpacity: 1,
+                        strokeColor: "#B91C1C",
+                        strokeWeight: 2,
+                    },
+                    title: "Destino",
+                })
+            );
+        }
+
+        if (stopsOnPath && stopsOnPath.length) {
+            routeMarkersRef.current.push(
+                ...stopsOnPath.map(
+                    (s) =>
+                        new google.maps.Marker({
+                            position: { lat: s.lat, lng: s.lng },
+                            map: mapRef.current!,
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 4,
+                                fillColor: "#3B82F6",
+                                fillOpacity: 1,
+                                strokeColor: "#1D4ED8",
+                                strokeWeight: 1,
+                            },
+                            title: s.name ?? "Parada",
+                        })
+                )
+            );
+        }
+    }, [ready, path, origin, destination, stopsOnPath]);
+
+    if (!ready) {
+        return (
+            <div
+                id="trayex-map"
+                style={{ width: "100%", height: "100%", ...(style || {}) }}
+            >
+                {/* placeholder mientras carga el script */}
+            </div>
+        );
+    }
 
     return (
-        <div
-            ref={ref}
-            className={className}
-            style={{
-                width: "100%",
-                height: "100%",
-                ...containerStyle,
-                ...style,
-            }}
-        />
+        <div id="trayex-map" style={{ width: "100%", height: "100%", ...(style || {}) }} />
     );
 }

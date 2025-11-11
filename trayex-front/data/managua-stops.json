@@ -1,0 +1,86 @@
+[
+    {
+        "id": "st-1",
+        "name": "UNAN Managua",
+        "lat": 12.13219,
+        "lng": -86.25135,
+        "isSafe": true
+    },
+    {
+        "id": "st-2",
+        "name": "Rotonda Rubén Darío",
+        "lat": 12.1291,
+        "lng": -86.27368,
+        "isSafe": true
+    },
+    {
+        "id": "st-3",
+        "name": "Catedral de Managua",
+        "lat": 12.15438,
+        "lng": -86.27387,
+        "isSafe": true
+    },
+    {
+        "id": "st-4",
+        "name": "Mercado Roberto Huembes",
+        "lat": 12.11136,
+        "lng": -86.25683,
+        "isSafe": true
+    },
+    {
+        "id": "st-5",
+        "name": "Metrocentro",
+        "lat": 12.13294,
+        "lng": -86.27303,
+        "isSafe": true
+    },
+    {
+        "id": "st-6",
+        "name": "Universidad UCA",
+        "lat": 12.12366,
+        "lng": -86.26662,
+        "isSafe": true
+    },
+    {
+        "id": "st-7",
+        "name": "Rotonda de Tiscapa",
+        "lat": 12.13794,
+        "lng": -86.28021,
+        "isSafe": true
+    },
+    {
+        "id": "st-8",
+        "name": "Mercado Oriental (accesos)",
+        "lat": 12.15094,
+        "lng": -86.26719,
+        "isSafe": false
+    },
+    {
+        "id": "st-9",
+        "name": "Hospital Manolo Morales",
+        "lat": 12.14331,
+        "lng": -86.29715,
+        "isSafe": true
+    },
+    {
+        "id": "st-10",
+        "name": "Rotonda Universitaria",
+        "lat": 12.1157,
+        "lng": -86.2619,
+        "isSafe": true
+    },
+    {
+        "id": "st-11",
+        "name": "Plaza Inter",
+        "lat": 12.15002,
+        "lng": -86.27969,
+        "isSafe": true
+    },
+    {
+        "id": "st-12",
+        "name": "El Zumen",
+        "lat": 12.11481,
+        "lng": -86.2819,
+        "isSafe": true
+    }
+]

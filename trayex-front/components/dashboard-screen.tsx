@@ -1,18 +1,9 @@
+// src/components/dashboard-screen.tsx
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  Home,
-  Route,
-  Ticket,
-  Bell,
-  User,
-  MapPin,
-  Clock,
-  Users,
-  QrCode,
-  Navigation,
-  LogOut,
+  Home, Route, Ticket, Bell, User, MapPin, Clock, Users, QrCode, Navigation, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,16 +14,13 @@ import { TripInProgressScreen } from "@/components/trip-in-progress-screen";
 import { NotificationsScreen } from "@/components/notifications-screen";
 import { ProfileScreen } from "@/components/profile-screen";
 import type { UserRole } from "@/types";
-
 import { MapWidget } from "@/components/map-widget";
 import { getUser, saveUser, clearToken, getToken } from "@/lib/session";
 import { getMe } from "@/lib/api";
 
-type DashboardScreenProps = {
-  userRole: UserRole;
-};
-
+type DashboardScreenProps = { userRole: UserRole };
 type NavItem = "home" | "routes" | "pass" | "notifications" | "profile";
+type MapStop = { lat: number; lng: number; name?: string };
 
 export function DashboardScreen({ userRole }: DashboardScreenProps) {
   const [activeNav, setActiveNav] = useState<NavItem>("home");
@@ -40,21 +28,26 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
   const [tripInProgress, setTripInProgress] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // ======== SESIÓN ========
+  // mapa
+  const [mapStops, setMapStops] = useState<MapStop[]>([]);
+  const [mapBuses, setMapBuses] = useState<{ lat: number; lng: number }[]>([]);
+  const [path, setPath] = useState<{ lat: number; lng: number }[] | undefined>(undefined);
+  const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null);
+  const [destination, setDestination] = useState<{ lat: number; lng: number } | null>(null);
+
+  // sesión
   const [user, setUser] = useState<any>(getUser());
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-    getMe()
+    getMe(token)
       .then((res) => {
         if (res?.user) {
           setUser(res.user);
           saveUser(res.user);
         }
       })
-      .catch(() => {
-        // mantiene lo de localStorage
-      });
+      .catch(() => { });
   }, []);
 
   const displayName = useMemo(() => {
@@ -64,22 +57,17 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     return user?.role || userRole || "Usuario";
   }, [user, userRole]);
 
-  // ======== GEO ========
+  // geo
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        () => {
-          setUserLocation({ lat: -0.1807, lng: -78.4678 });
-        }
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setUserLocation({ lat: 12.136389, lng: -86.251389 })
       );
     }
   }, []);
+
+  const center = userLocation ?? { lat: 12.136389, lng: -86.251389 };
 
   const handleReserveRoute = (routeName: string) => setTripInProgress(routeName);
   const handleEndTrip = () => {
@@ -87,27 +75,43 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     setActiveNav("home");
   };
 
+  // recibe planificación desde RoutesScreen
+  const handlePlannedTrip = (payload: {
+    routeId: string;
+    from: MapStop;
+    to: MapStop;
+    stopsToShow: MapStop[];
+    path: { lat: number; lng: number }[];
+  }) => {
+    setMapStops(payload.stopsToShow);
+    setOrigin({ lat: payload.from.lat, lng: payload.from.lng });
+    setDestination({ lat: payload.to.lat, lng: payload.to.lng });
+    setPath(payload.path);
+
+    // buses demo cerca de la mitad
+    const midLat = (payload.from.lat + payload.to.lat) / 2;
+    const midLng = (payload.from.lng + payload.to.lng) / 2;
+    setMapBuses([
+      { lat: midLat + 0.0015, lng: midLng - 0.001 },
+      { lat: midLat - 0.001, lng: midLng + 0.0015 },
+    ]);
+
+    setActiveNav("home");
+  };
+
   if (tripInProgress) {
     return <TripInProgressScreen routeName={tripInProgress} onEndTrip={handleEndTrip} />;
   }
 
-  const buses = [
-    ...(userLocation
-      ? [{ lat: userLocation.lat + 0.0045, lng: userLocation.lng - 0.01 }]
-      : [{ lat: -0.1807 + 0.0045, lng: -78.4678 - 0.01 }]),
-    ...(userLocation
-      ? [{ lat: userLocation.lat - 0.004, lng: userLocation.lng + 0.012 }]
-      : [{ lat: -0.1807 - 0.004, lng: -78.4678 + 0.012 }]),
-  ];
-
-  const stops = [
-    ...(userLocation ? [{ lat: userLocation.lat, lng: userLocation.lng }] : [{ lat: -0.1807, lng: -78.4678 }]),
-  ];
-
   const renderContent = () => {
     switch (activeNav) {
       case "routes":
-        return <RoutesScreen onReserveRoute={handleReserveRoute} />;
+        return (
+          <RoutesScreen
+            onReserveRoute={handleReserveRoute}
+            onPlannedTrip={handlePlannedTrip}
+          />
+        );
       case "pass":
         return <PassScreen />;
       case "notifications":
@@ -118,7 +122,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
       default:
         return (
           <div className="flex-1 relative">
-            {/* HEADER con saludo + logout */}
+            {/* Header */}
             <div className="flex items-center justify-between p-4">
               <div className="space-y-0.5">
                 <p className="text-xs text-muted-foreground">Bienvenido</p>
@@ -137,18 +141,22 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               </Button>
             </div>
 
-            {/* GOOGLE MAPS REAL */}
+            {/* Mapa */}
             <div className="absolute inset-0">
               <MapWidget
-                center={userLocation ?? { lat: -0.1807, lng: -78.4678 }}
-                zoom={14}
-                buses={buses}
-                stops={stops}
+                center={center}
+                zoom={13}
+                buses={mapBuses}
+                stops={[]} // vacío para no lag
+                path={path}
+                origin={origin}
+                destination={destination}
+                stopsOnPath={mapStops}
                 style={{ width: "100%", height: "100%" }}
               />
             </div>
 
-            {/* CARD inferior */}
+            {/* Card inferior */}
             <div className="absolute bottom-20 left-0 right-0 p-4">
               <Card className="bg-card/95 backdrop-blur-lg border-2 rounded-3xl shadow-2xl p-5 space-y-4">
                 <div className="space-y-2">
@@ -211,40 +219,32 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {renderContent()}
-
       <nav className="bg-card border-t border-border px-2 py-3 safe-area-bottom">
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
             onClick={() => setActiveNav("home")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "home" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-              }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "home" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
           >
             <Home className="w-6 h-6" />
             <span className="text-xs font-medium">Inicio</span>
           </button>
-
           <button
             onClick={() => setActiveNav("routes")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "routes" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-              }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "routes" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
           >
             <Route className="w-6 h-6" />
             <span className="text-xs font-medium">Rutas</span>
           </button>
-
           <button
             onClick={() => setActiveNav("pass")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "pass" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-              }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "pass" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
           >
             <Ticket className="w-6 h-6" />
             <span className="text-xs font-medium">Pase</span>
           </button>
-
           <button
             onClick={() => setActiveNav("notifications")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors relative ${activeNav === "notifications" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-              }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors relative ${activeNav === "notifications" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
           >
             <Bell className="w-6 h-6" />
             <span className="text-xs font-medium">Avisos</span>
@@ -254,11 +254,9 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               </span>
             )}
           </button>
-
           <button
             onClick={() => setActiveNav("profile")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "profile" ? "bg-primary/10 text-primary" : "text-muted-foreground"
-              }`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "profile" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
           >
             <User className="w-6 h-6" />
             <span className="text-xs font-medium">Perfil</span>

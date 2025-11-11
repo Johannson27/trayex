@@ -1,0 +1,44 @@
+[
+    {
+        "id": "rt-102",
+        "name": "Ruta 102",
+        "description": "Eje UNAN - Metrocentro - Plaza Inter",
+        "mainStops": [
+            "UNAN Managua",
+            "Metrocentro",
+            "Plaza Inter"
+        ],
+        "status": "ACTIVE",
+        "estimatedTime": "35–45 min",
+        "capacity": "Bus estándar",
+        "isFavorite": false
+    },
+    {
+        "id": "rt-110",
+        "name": "Ruta 110",
+        "description": "UCA - Rotonda Tiscapa - Mercado Oriental (accesos)",
+        "mainStops": [
+            "Universidad UCA",
+            "Rotonda de Tiscapa",
+            "Mercado Oriental (accesos)"
+        ],
+        "status": "SAFE",
+        "estimatedTime": "30–40 min",
+        "capacity": "Bus estándar",
+        "isFavorite": false
+    },
+    {
+        "id": "rt-117",
+        "name": "Ruta 117",
+        "description": "Roberto Huembes - Rotonda Rubén Darío - Catedral",
+        "mainStops": [
+            "Mercado Roberto Huembes",
+            "Rotonda Rubén Darío",
+            "Catedral de Managua"
+        ],
+        "status": "ACTIVE",
+        "estimatedTime": "25–35 min",
+        "capacity": "Bus articulado",
+        "isFavorite": false
+    }
+]

@@ -1,0 +1,1404 @@
+{
+  "routes": [
+    {
+      "id": "2602344",
+      "name": "Ruta 119: Cuesta El Plomo -> Villa Fraternidad",
+      "description": "Cooperativa 21 de Enero",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2602440",
+      "name": "Ruta 101: Las Brisas -> Mercado Mayoreo",
+      "description": "Cooperativa Cootbusa",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2602458",
+      "name": "Ruta 266: Monte Fresco -> Mercado Oriental",
+      "description": "Cooperativa Ricardo Morales Avilés",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "45",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2602495",
+      "name": "Ruta 170: Villa Jośe Benito Escobar -> Puerto Salvador Allende",
+      "description": "Cooperativa Camilo Chamorro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2602869",
+      "name": "Ruta 103: Hospital Lenín Fonseca -> Laureles Sur",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2606743",
+      "name": "Ruta 114: Villa José Benito Escobar -> Cuesta del Plomo",
+      "description": "Cooperativa Colón",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2606806",
+      "name": "Ruta 102: Mercado Mayoreo -> Acahualinca",
+      "description": "Cooperativa Andrés Castro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2606881",
+      "name": "Ruta 104: Mercado Mayoreo -> Hialeah",
+      "description": "Cooperativa Omar Baca",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2607453",
+      "name": "Ruta 107: Camilo Ortega -> Mercado Oriental (Cementerio)",
+      "description": "Cooperativa Colón",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2607516",
+      "name": "Ruta 120: Mercado Mayoreo -> El Seminario",
+      "description": "Cooperativa De Transporte Urbano Unitario R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2607580",
+      "name": "Ruta 6: Barrio Camilo Chamorro -> Colonia Independencia",
+      "description": "Cooperativa 17 de Octubre",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2608650",
+      "name": "Ruta 6: Colonia Independencia -> Barrio Camilo Chamorro",
+      "description": "Cooperativa 17 de Octubre",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2608742",
+      "name": "Ruta 154: Camilo Ortega -> Mercado Iván Montenegro",
+      "description": "Cooperativa Camilo Ortega",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2614526",
+      "name": "Ruta 106: El Seminario -> Barrio Berta Díaz",
+      "description": "Empresa 30 de Mayo y Cooperativa Cooptracopiro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2616965",
+      "name": "Ruta 111: Colonia Miguel Bonilla -> Laureles Norte",
+      "description": "Cooperativa Nicarao",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "95",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2665333",
+      "name": "Ruta 210: Ciudad Sandino (Villa Soberana) -> Metrocentro",
+      "description": "Empresa de Transportes Múltiples (ETRAMUL)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2730510",
+      "name": "Ruta 158: Camilo Ortega -> Mercado Oriental",
+      "description": "Cooperativa Camilo Ortega",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2739256",
+      "name": "Ruta 165: Barrio Naciones Unidas -> San Luis Norte",
+      "description": "Cooperativa Nueva Nicaragua y Cooperativa 12 de Octubre",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2879899",
+      "name": "Ruta 112: Villa Libertad -> Colonia Independencia",
+      "description": "Cooperativa Colón",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2879951",
+      "name": "Ruta 163: Sabana Grande -> Mercado Oriental",
+      "description": "Cooperativa de Transporte Casimiro Sotelo",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2941129",
+      "name": "Ruta VAN: Mercado Oriental -> Comarca Los Vanegas",
+      "description": "Cooperativa Los Vanegas",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "70",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2941501",
+      "name": "Ruta 118: Laureles Sur -> Cuesta El Plomo",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2941503",
+      "name": "Ruta VAN: Comarca Los Vanegas -> Mercado Oriental",
+      "description": "Cooperativa Los Vanegas",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "70",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2941631",
+      "name": "Ruta 105: Unidad de Propósito -> Camilo Ortega",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2942156",
+      "name": "Ruta 109: Hospital Lenín Fonseca -> Reparto Schick",
+      "description": "Cooperativa 21 de Enero",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2942162",
+      "name": "Ruta 108: Barrio José Dolores Estrada -> Reparto Schick",
+      "description": "Cooperativa 21 de Enero",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "2942229",
+      "name": "Ruta 105: Camilo Ortega -> Unidad de Propósito",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3126759",
+      "name": "Ruta 112: Colonia Independencia -> Villa Libertad",
+      "description": "Cooperativa Colón",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3155254",
+      "name": "Ruta 168: Lomas de Guadalupe -> Colonia Miguel Bonilla",
+      "description": "Cooperativa Iván Montegro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3182542",
+      "name": "Ruta 262: Comarca Los Vanegas -> INATEC",
+      "description": "Cooperativa Las Jagüitas",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "100",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3199877",
+      "name": "Ruta 116: Villa Libertad -> El Seminario",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3199878",
+      "name": "Ruta 168: Colonia Miguel Bonilla -> Lomas de Guadalupe",
+      "description": "Cooperativa Iván Montegro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3201772",
+      "name": "Ruta 262: INATEC -> Comarca Los Vanegas",
+      "description": "Cooperativa Las Jagüitas",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "100",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3213716",
+      "name": "Ruta 119: Villa Fraternidad -> Cuesta el Plomo",
+      "description": "Cooperativa 21 de Enero",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3279637",
+      "name": "Ruta 106: Barrio Berta Díaz -> El Seminario",
+      "description": "Empresa 30 de Mayo y Cooperativa Cooptracopiro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3283256",
+      "name": "Miniruta 4 (261): Barrio Santa Rosa -> Villa Roma",
+      "description": "Cooperativa de Transporte Urbano Colectivo Samuel Mairena Wren",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "110",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3291966",
+      "name": "Ruta 111: Laureles Norte -> Colonia Miguel Bonilla",
+      "description": "Cooperativa Nicarao",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "95",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3293473",
+      "name": "Ruta 163: Mercado Oriental -> Sabana Grande",
+      "description": "Cooperativa de Transporte Casimiro Sotelo",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3376761",
+      "name": "Ruta 107: Mercado Oriental -> Camilo Ortega (Cementerio)",
+      "description": "Cooperativa Colón",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3751865",
+      "name": "Ruta 110: Mercado Mayoreo -> Aldea SOS",
+      "description": "Cooperativa de Transporte Urbano Unitario R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3751885",
+      "name": "Ruta 110: Aldea SOS -> Mercado Mayoreo",
+      "description": "Cooperativa de Transporte Urbano Unitario R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3753499",
+      "name": "Ruta 117: Villa José Benito Escobar -> UCA",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3753516",
+      "name": "Ruta 117: UCA -> Villa José Benito Escobar",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "3877882",
+      "name": "Ruta 114: Cuesta del Plomo -> Villa José Benito Escobar",
+      "description": "Cooperativa Colón",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4245551",
+      "name": "Ruta 109: Reparto Schick -> Hospital Lenín Fonseca",
+      "description": "Cooperativa 21 de Enero",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4266316",
+      "name": "Ruta 113: Mercado Oriental -> Ciudad Sandino (San Miguel)",
+      "description": "Cooperativa de Transporte Colectivo Pedro Joaquín Chamorro Cardenal, R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4268979",
+      "name": "Ruta 113: Ciudad Sandino (San Miguel) -> Mercado Oriental",
+      "description": "Cooperativa de Transporte Colectivo Pedro Joaquín Chamorro Cardenal, R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4279121",
+      "name": "Ruta 123: Mercado Roberto Huembes -> San Judas",
+      "description": "Cooperativa 22 de Octubre",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4284473",
+      "name": "Ruta 123: San Judas -> Mercado Roberto Huembes",
+      "description": "Cooperativa 22 de Octubre",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4287285",
+      "name": "Ruta 154: Mercado Iván Montenegro => Camilo Ortega",
+      "description": "Cooperativa Camilo Ortega",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4420884",
+      "name": "Ruta 158: Mercado Oriental -> Camilo Ortega",
+      "description": "Cooperativa Camilo Ortega",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4439329",
+      "name": "Ruta 159: Acahualinca -> Mercado Mayoreo",
+      "description": "Cooperativa de Trasporte Ricardo Morales Avilés",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4450949",
+      "name": "Ruta 159: Mercado Mayoreo -> Acahualinca",
+      "description": "Cooperativa de Trasporte Ricardo Morales Avilés",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4463818",
+      "name": "Ruta 164: Antiguo Estadio Nacional -> Villa Cuba",
+      "description": "Cooperativa Divina Luz",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4464027",
+      "name": "Ruta 164: Villa Cuba -> Antiguo Estadio Nacional",
+      "description": "Cooperativa Divina Luz",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4482498",
+      "name": "Ruta 165: San Luis Norte -> Barrio Naciones Unidas",
+      "description": "Cooperativa Nueva Nicaragua y Cooperativa 12 de Octubre",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4482796",
+      "name": "Ruta 167: Barrio Arnoldo Alemán -> Mercado Israel Lewites",
+      "description": "Cooperativa de Transporte Unión Democrática (Cootrasude)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "100",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4485305",
+      "name": "Ruta 167: Mercado Israel Lewites -> Barrio Arnoldo Alemán",
+      "description": "Cooperativa de Transporte Unión Democrática (Cootrasude)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "100",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4501269",
+      "name": "Ruta 169: Las Mercedes -> Barrio Francisco Salazar",
+      "description": "Cooperativa Unión, Fe y Paz (COUNEPAZ)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4503689",
+      "name": "Ruta 169: Barrio Francisco Salazar -> Las Mercedes",
+      "description": "Cooperativa Unión, Fe y Paz (COUNEPAZ)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4508224",
+      "name": "Ruta 170: Puerto Salvador Allende -> Villa José Benito Escobar",
+      "description": "Cooperativa Camilo Chamorro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4512869",
+      "name": "Ruta 195: Barrio Milagro de Dios -> Parque Central",
+      "description": "Cooperativa Milagro de Dios",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4512987",
+      "name": "Ruta 175: Memorial Sandino -> Laureles Norte",
+      "description": "Cooperativa La Reconciliación",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "110",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4553998",
+      "name": "Ruta 266: Mercado Oriental -> Monte Fresco",
+      "description": "Cooperativa Ricardo Morales Avilés",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "45",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "4559121",
+      "name": "Ruta 104: Hialeah -> Mercado Mayoreo",
+      "description": "Cooperativa Omar Baca",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5357337",
+      "name": "Ruta 103: Laureles Sur -> Hospital Lenín Fonseca",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5435724",
+      "name": "Ruta 118: Cuesta El Plomo -> Villa Libertad",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5438277",
+      "name": "Ruta 120: El Seminario -> Mercado Mayoreo",
+      "description": "Cooperativa De Transporte Urbano Unitario R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5446754",
+      "name": "Ruta 116: El Seminario -> Villa Libertad",
+      "description": "Cooperativa Parrales Vallejos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5449249",
+      "name": "Ruta 195: Parque Central -> Milagro de Dios",
+      "description": "Cooperativa Milagro de Dios",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5450299",
+      "name": "Ruta 101: Mercado Mayoreo -> Las Brisas",
+      "description": "Cooperativa Cootbusa",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5450896",
+      "name": "Ruta 102: Acahualinca -> Mercado Mayoreo",
+      "description": "Cooperativa Andrés Castro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5453245",
+      "name": "Ruta 108: Reparto Schick -> Barrio José Dolores Estrada",
+      "description": "Cooperativa 21 de Enero",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5453740",
+      "name": "Miniruta 4 (261): Villa Roma -> Barrio Santa Rosa",
+      "description": "Cooperativa de Transporte Urbano Colectivo Samuel Mairena Wren",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "110",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5463744",
+      "name": "Ruta 210: Catedral -> Ciudad Sandino (Villa Soberana)",
+      "description": "Empresa de Transportes Múltiples (ETRAMUL)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5709365",
+      "name": "Ruta 133: Ciudad Sandino (Zona 6) -> Mercado Oriental, Managua",
+      "description": "Cooperativa de Servicios Especiales de Ciudad Sandino",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5709468",
+      "name": "Ruta 133: Mercado Oriental -> Ciudad Sandino (Zona 6)",
+      "description": "Cooperativa de Servicios Especiales de Ciudad Sandino",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5709563",
+      "name": "Ruta 172: Ciudad Sandino (Los Brasiles) -> Mercado Oriental",
+      "description": "Cooperativa de Transporte Marlon Zelaya",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "100",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5709564",
+      "name": "Ruta 172: Mercado Oriental -> Ciudad Sandino (Los Brasiles)",
+      "description": "Cooperativa de Transporte Marlon Zelaya",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "100",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5709615",
+      "name": "Ruta 125: Ciudad Sandino (Bello Amanecer) -> Mercado Oriental",
+      "description": "Cooperativa de Transporte Marlon Zelaya",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5709616",
+      "name": "Ruta 125: Mercado Oriental -> Ciudad Sandino (Bello Amanecer)",
+      "description": "Cooperativa de Transporte Marlon Zelaya",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "80",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5714046",
+      "name": "Ruta 115: Ciudad Sandino (Zona 5) -> Mercado Oriental",
+      "description": "Cooperativa Nueva Unidad y Esfuerzos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5714047",
+      "name": "Ruta 115: Mercado Oriental -> Ciudad Sandino (Zona 5)",
+      "description": "Cooperativa Nueva Unidad y Esfuerzos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5859063",
+      "name": "Ruta 125 (CS): Altos de Motastepe -> Mercadito (Ciudad Sandino)",
+      "description": "Cooperativa de Transporte Marlon Zelaya",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5859064",
+      "name": "Ruta 125 (CS): Mercadito (Ciudad Sandino) -> Altos de Motastepe",
+      "description": "Cooperativa de Transporte Marlon Zelaya",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "75",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5860303",
+      "name": "Ruta 175: Laureles Norte -> Memorial Sandino",
+      "description": "Cooperativa La Reconciliación",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "110",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5872493",
+      "name": "Ruta ESQ: Mercado Roberto Huembes -> Vistas de Esquipulas",
+      "description": "Cooperativa TICONTAN",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "70",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5872784",
+      "name": "Ruta ESQ: Vistas de Esquipulas -> Mercado Roberto Huembes",
+      "description": "Cooperativa TICONTAN",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "70",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5910107",
+      "name": "Ruta SIS: Mercado Oriental -> San Isidro",
+      "description": "Cooperativa San Isidro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "5910108",
+      "name": "Ruta SIS: San Isidro -> Mercado Oriental",
+      "description": "Cooperativa San Isidro",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "60",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "6184303",
+      "name": "Ruta 113 Guasimas => EXPOCUBA => San Agustín",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "6184304",
+      "name": "Ruta 113 San Agustín => EXPOCUBA => Guasimas",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "6184352",
+      "name": "Ruta 88 Finca el Rocio => Lawton",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "6184353",
+      "name": "Ruta 88 Lawton => Finca Rocio",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "6666642",
+      "name": "Ruta A9 Santiago => Managua => Cotorro",
+      "description": "EPTH",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7662612",
+      "name": "Expreso: Estelí -> Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7662613",
+      "name": "Expreso: Managua -> Estelí",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7665429",
+      "name": "Managua -> Granada",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7696747",
+      "name": "Ruteado: Estelí -> Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7704308",
+      "name": "Masatepe -> Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7704411",
+      "name": "Masaya -> Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7752731",
+      "name": "Expreso: Managua -> Estelí",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "7752732",
+      "name": "Expreso: Estelí -> Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8027645",
+      "name": "Ruteado: Managua -> Estelí",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8120674",
+      "name": "Microbus Expreso: Managua -> Jinotepe",
+      "description": "Granma",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8134923",
+      "name": "Rama -> Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8136520",
+      "name": "Expreso: Managua -> El Rama",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8395628",
+      "name": "Interparques Expocuba => Fortuna",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8395629",
+      "name": "Interparques Fortuna => Expocuba",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8395631",
+      "name": "Ruta A18 Lawton => Volcán",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8398209",
+      "name": "Ruta 46 Finca el Rocío => Santiago",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8398210",
+      "name": "Ruta 46 Santiago => Finca El Rocío",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "8635727",
+      "name": "Ruta A18 Volcán => Lawton",
+      "description": "Ómnibus Metropolitanos",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "9180382",
+      "name": "Ruta A9 Cotorro => Managua => Santiago",
+      "description": "EPTH",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10465264",
+      "name": "Microbus Expreso: Jinotepe -> Managua",
+      "description": "Granma",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515172",
+      "name": "R. Huembes: Managua -> Tipitapa (La Villa)",
+      "description": "Cooperativa El Esfuerzo Democrático R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515173",
+      "name": "R. Huembes: Managua -> Tipitapa (Reparto)",
+      "description": "Cooperativa El Esfuerzo Democrático R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515174",
+      "name": "R. Huembes: Tipitapa -> Managua (Hospital Alemán)",
+      "description": "Cooperativa El Esfuerzo Democrático R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515175",
+      "name": "R. Huembes: Tipitapa -> Managua (Recto)",
+      "description": "Cooperativa El Esfuerzo Democrático R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515191",
+      "name": "Ruta 401: Managua -> Tipitapa (La Gallera)",
+      "description": "Cooperativa de Transporte Carga y Pasajeros de Tipitapa “Villa Pedro Aráuz. R.L” (COTRAVIPA R.L)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515192",
+      "name": "Ruta 401: Managua -> Tipitapa (La Villa)",
+      "description": "Cooperativa de Transporte Carga y Pasajeros de Tipitapa “Villa Pedro Aráuz. R.L” (COTRAVIPA R.L)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515193",
+      "name": "Ruta 401: Tipitapa -> Managua (El Dancing)",
+      "description": "Cooperativa de Transporte Carga y Pasajeros de Tipitapa “Villa Pedro Aráuz. R.L” (COTRAVIPA R.L)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10515194",
+      "name": "Ruta 401: Tipitapa -> Managua (Pista El Mayoreo)",
+      "description": "Cooperativa de Transporte Carga y Pasajeros de Tipitapa “Villa Pedro Aráuz. R.L” (COTRAVIPA R.L)",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10524856",
+      "name": "Microbus Expreso: León -> Managua",
+      "description": "Cooperativa 11 de julio R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10524857",
+      "name": "Microbus Expreso: Managua -> León",
+      "description": "Cooperativa 11 de julio R.L.",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "10548148",
+      "name": "Expreso: Jinotega -> Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "11059413",
+      "name": "Ruta C2 Cotorro Cuatro Caminos Las Guásimas",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "11228556",
+      "name": "Ruta 172 (CS): Villa Sandino -> Ciudad Sandino",
+      "description": "Cooperativa Ciudad Sandino",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "30",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "11228557",
+      "name": "Ruta 172 (CS): Ciudad Sandino -> Valle de Sandino",
+      "description": "Cooperativa Ciudad Sandino",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "30",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "12587373",
+      "name": "Ruta 9: Lucidia Mantilla -> Hospital Regional",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "12704550",
+      "name": "Managua -> Masatepe",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "12715510",
+      "name": "Managua -> Masaya",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "13997381",
+      "name": "Cofradia: Sector 1 -> Mercado Oriental",
+      "description": "Individuales",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "13997382",
+      "name": "Cofradia: Mercado Oriental -> Sector 1",
+      "description": "Individuales",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "90",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "14036915",
+      "name": "Managua -> Camoapa",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "14042826",
+      "name": "Camoapa->Managua",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "14295000",
+      "name": "Ruta Batabanó Calvario",
+      "description": "TransMayabeque",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "14320081",
+      "name": "Ruta Melena Calvario",
+      "description": "TransMayabeque",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "14606056",
+      "name": "Ruta 473 Santiago de las Vegas - Hospital Nacional",
+      "description": "Empresa Provincial de Transporte de La Habana",
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    },
+    {
+      "id": "19462605",
+      "name": "Masaya - Managua (UCA)",
+      "description": null,
+      "mainStops": [],
+      "status": "ACTIVE",
+      "estimatedTime": "—",
+      "capacity": "—",
+      "isFavorite": false
+    }
+  ]
+}

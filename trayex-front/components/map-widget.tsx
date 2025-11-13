@@ -1,19 +1,20 @@
-// src/components/map-widget.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type LatLng = { lat: number; lng: number };
+type EnrichedLatLng = LatLng & { name?: string };
+
 type MapWidgetProps = {
     center: LatLng;
     zoom?: number;
     style?: React.CSSProperties;
     buses?: LatLng[];
-    stops?: (LatLng & { name?: string })[];
+    stops?: EnrichedLatLng[];
     path?: LatLng[];
     origin?: LatLng | null;
     destination?: LatLng | null;
-    stopsOnPath?: (LatLng & { name?: string })[];
+    stopsOnPath?: EnrichedLatLng[];
 };
 
 export function MapWidget({
@@ -35,13 +36,13 @@ export function MapWidget({
     const routeMarkersRef = useRef<google.maps.Marker[]>([]);
     const polylineRef = useRef<google.maps.Polyline | null>(null);
 
-    // Espera a que el script de Google Maps esté disponible
+    // Esperar a que google.maps exista
     useEffect(() => {
         let mounted = true;
 
         const ensureGoogle = () => {
             if (typeof window !== "undefined" && (window as any).google?.maps) {
-                mounted && setReady(true);
+                if (mounted) setReady(true);
                 return true;
             }
             return false;
@@ -49,23 +50,21 @@ export function MapWidget({
 
         if (ensureGoogle()) return;
 
-        // reintenta varias veces durante ~2s
-        const id = setInterval(() => {
-            if (ensureGoogle()) clearInterval(id);
+        const id = window.setInterval(() => {
+            if (ensureGoogle()) window.clearInterval(id);
         }, 100);
 
-        // por si el script dispara onload
-        const handler = () => ensureGoogle();
-        window.addEventListener("load", handler);
+        const onLoad = () => ensureGoogle();
+        window.addEventListener("load", onLoad);
 
         return () => {
             mounted = false;
-            clearInterval(id);
-            window.removeEventListener("load", handler);
+            window.clearInterval(id);
+            window.removeEventListener("load", onLoad);
         };
     }, []);
 
-    // Inicializa o recentra mapa
+    // Inicializar / recentrar mapa
     useEffect(() => {
         if (!ready) return;
         const el = document.getElementById("trayex-map") as HTMLElement | null;
@@ -84,7 +83,7 @@ export function MapWidget({
 
     const clearMarkers = (ref: React.MutableRefObject<google.maps.Marker[]>) => {
         ref.current.forEach((m) => m.setMap(null));
-        ref.current = { current: [] } as any;
+        ref.current.length = 0; // 👈 vaciamos el array sin re-asignar
     };
 
     // Buses
@@ -102,7 +101,7 @@ export function MapWidget({
         );
     }, [ready, buses]);
 
-    // Paradas sueltas (si las usas)
+    // Paradas “sueltas”
     useEffect(() => {
         if (!ready || !mapRef.current) return;
         clearMarkers(stopMarkersRef);
@@ -117,7 +116,7 @@ export function MapWidget({
         );
     }, [ready, stops]);
 
-    // Polilínea + origen/destino + paradas del tramo
+    // Línea + origen/destino + paradas del tramo
     useEffect(() => {
         if (!ready || !mapRef.current) return;
 
@@ -132,7 +131,7 @@ export function MapWidget({
                 path,
                 strokeOpacity: 1,
                 strokeWeight: 4,
-                map: mapRef.current,
+                map: mapRef.current!,
             });
         }
 
@@ -173,24 +172,23 @@ export function MapWidget({
         }
 
         if (stopsOnPath && stopsOnPath.length) {
-            routeMarkersRef.current.push(
-                ...stopsOnPath.map(
-                    (s) =>
-                        new google.maps.Marker({
-                            position: { lat: s.lat, lng: s.lng },
-                            map: mapRef.current!,
-                            icon: {
-                                path: google.maps.SymbolPath.CIRCLE,
-                                scale: 4,
-                                fillColor: "#3B82F6",
-                                fillOpacity: 1,
-                                strokeColor: "#1D4ED8",
-                                strokeWeight: 1,
-                            },
-                            title: s.name ?? "Parada",
-                        })
-                )
-            );
+            stopsOnPath.forEach((s) => {
+                routeMarkersRef.current.push(
+                    new google.maps.Marker({
+                        position: { lat: s.lat, lng: s.lng },
+                        map: mapRef.current!,
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 4,
+                            fillColor: "#3B82F6",
+                            fillOpacity: 1,
+                            strokeColor: "#1D4ED8",
+                            strokeWeight: 1,
+                        },
+                        title: s.name ?? "Parada",
+                    })
+                );
+            });
         }
     }, [ready, path, origin, destination, stopsOnPath]);
 
@@ -199,13 +197,17 @@ export function MapWidget({
             <div
                 id="trayex-map"
                 style={{ width: "100%", height: "100%", ...(style || {}) }}
-            >
-                {/* placeholder mientras carga el script */}
-            </div>
+            />
         );
     }
 
     return (
-        <div id="trayex-map" style={{ width: "100%", height: "100%", ...(style || {}) }} />
+        <div
+            id="trayex-map"
+            style={{ width: "100%", height: "100%", ...(style || {}) }}
+        />
     );
 }
+
+// 👇 por si en algún sitio lo importas como default
+export default MapWidget;

@@ -3,7 +3,17 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  Home, Route, Ticket, Bell, User, MapPin, Clock, Users, QrCode, Navigation, LogOut,
+  Home,
+  Route,
+  Ticket,
+  Bell,
+  User,
+  MapPin,
+  Clock,
+  Users,
+  QrCode,
+  Navigation,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,24 +28,29 @@ import { MapWidget } from "@/components/map-widget";
 import { getUser, saveUser, clearToken, getToken } from "@/lib/session";
 import { getMe } from "@/lib/api";
 
-type DashboardScreenProps = { userRole: UserRole };
+type DashboardScreenProps = {
+  userRole: UserRole;
+};
+
 type NavItem = "home" | "routes" | "pass" | "notifications" | "profile";
-type MapStop = { lat: number; lng: number; name?: string };
+
+type LatLng = { lat: number; lng: number };
+type MapStop = LatLng & { name?: string };
 
 export function DashboardScreen({ userRole }: DashboardScreenProps) {
   const [activeNav, setActiveNav] = useState<NavItem>("home");
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [tripInProgress, setTripInProgress] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // mapa
+  // ======== MAPA ========
   const [mapStops, setMapStops] = useState<MapStop[]>([]);
-  const [mapBuses, setMapBuses] = useState<{ lat: number; lng: number }[]>([]);
-  const [path, setPath] = useState<{ lat: number; lng: number }[] | undefined>(undefined);
-  const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null);
-  const [destination, setDestination] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapBuses, setMapBuses] = useState<LatLng[]>([]);
+  const [path, setPath] = useState<LatLng[] | undefined>(undefined);
+  const [origin, setOrigin] = useState<LatLng | null>(null);
+  const [destination, setDestination] = useState<LatLng | null>(null);
 
-  // sesión
+  // ======== SESIÓN ========
   const [user, setUser] = useState<any>(getUser());
   useEffect(() => {
     const token = getToken();
@@ -47,7 +62,9 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
           saveUser(res.user);
         }
       })
-      .catch(() => { });
+      .catch(() => {
+        // si falla, dejamos lo del localStorage
+      });
   }, []);
 
   const displayName = useMemo(() => {
@@ -57,12 +74,16 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     return user?.role || userRole || "Usuario";
   }, [user, userRole]);
 
-  // geo
+  // ======== GEO ========
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLocation({ lat: 12.136389, lng: -86.251389 })
+        (pos) =>
+          setUserLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          }),
+        () => setUserLocation({ lat: 12.136389, lng: -86.251389 }) // Managua
       );
     }
   }, []);
@@ -75,32 +96,52 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     setActiveNav("home");
   };
 
-  // recibe planificación desde RoutesScreen
+  // ======== PLANIFICACIÓN DESDE ROUTESCREEN ========
   const handlePlannedTrip = (payload: {
     routeId: string;
     from: MapStop;
     to: MapStop;
     stopsToShow: MapStop[];
-    path: { lat: number; lng: number }[];
+    path: LatLng[];
   }) => {
+    // stops que queremos pintar a lo largo de la ruta
     setMapStops(payload.stopsToShow);
+
+    // origen / destino para los marcadores grandes
     setOrigin({ lat: payload.from.lat, lng: payload.from.lng });
     setDestination({ lat: payload.to.lat, lng: payload.to.lng });
-    setPath(payload.path);
 
-    // buses demo cerca de la mitad
-    const midLat = (payload.from.lat + payload.to.lat) / 2;
-    const midLng = (payload.from.lng + payload.to.lng) / 2;
-    setMapBuses([
-      { lat: midLat + 0.0015, lng: midLng - 0.001 },
-      { lat: midLat - 0.001, lng: midLng + 0.0015 },
-    ]);
+    // path completo (shape) que viene de la ruta
+    const pathFromPayload =
+      payload.path && payload.path.length >= 2
+        ? payload.path
+        : [
+          { lat: payload.from.lat, lng: payload.from.lng },
+          { lat: payload.to.lat, lng: payload.to.lng },
+        ];
+    setPath(pathFromPayload);
+
+    // buses de demo: alrededor del punto medio del path
+    if (pathFromPayload.length >= 2) {
+      const mid = pathFromPayload[Math.floor(pathFromPayload.length / 2)];
+      setMapBuses([
+        { lat: mid.lat + 0.0015, lng: mid.lng - 0.001 },
+        { lat: mid.lat - 0.001, lng: mid.lng + 0.0015 },
+      ]);
+    } else {
+      setMapBuses([]);
+    }
 
     setActiveNav("home");
   };
 
   if (tripInProgress) {
-    return <TripInProgressScreen routeName={tripInProgress} onEndTrip={handleEndTrip} />;
+    return (
+      <TripInProgressScreen
+        routeName={tripInProgress}
+        onEndTrip={handleEndTrip}
+      />
+    );
   }
 
   const renderContent = () => {
@@ -122,7 +163,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
       default:
         return (
           <div className="flex-1 relative">
-            {/* Header */}
+            {/* HEADER */}
             <div className="flex items-center justify-between p-4">
               <div className="space-y-0.5">
                 <p className="text-xs text-muted-foreground">Bienvenido</p>
@@ -141,13 +182,13 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               </Button>
             </div>
 
-            {/* Mapa */}
+            {/* MAPA */}
             <div className="absolute inset-0">
               <MapWidget
                 center={center}
                 zoom={13}
                 buses={mapBuses}
-                stops={[]} // vacío para no lag
+                stops={[]} // vacío para no llenar de puntos naranjas
                 path={path}
                 origin={origin}
                 destination={destination}
@@ -156,7 +197,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               />
             </div>
 
-            {/* Card inferior */}
+            {/* CARD INFERIOR */}
             <div className="absolute bottom-20 left-0 right-0 p-4">
               <Card className="bg-card/95 backdrop-blur-lg border-2 rounded-3xl shadow-2xl p-5 space-y-4">
                 <div className="space-y-2">
@@ -166,8 +207,12 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                         <MapPin className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Parada favorita</p>
-                        <p className="font-semibold text-foreground">Campus Central</p>
+                        <p className="text-xs text-muted-foreground">
+                          Parada favorita
+                        </p>
+                        <p className="font-semibold text-foreground">
+                          Campus Central
+                        </p>
                       </div>
                     </div>
                     <Badge variant="secondary" className="rounded-full">
@@ -184,8 +229,12 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                         <Navigation className="w-5 h-5 text-accent" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Parada más cercana</p>
-                        <p className="font-semibold text-foreground">Av. Principal</p>
+                        <p className="text-xs text-muted-foreground">
+                          Parada más cercana
+                        </p>
+                        <p className="font-semibold text-foreground">
+                          Av. Principal
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -223,28 +272,43 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
             onClick={() => setActiveNav("home")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "home" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "home"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground"
+              }`}
           >
             <Home className="w-6 h-6" />
             <span className="text-xs font-medium">Inicio</span>
           </button>
+
           <button
             onClick={() => setActiveNav("routes")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "routes" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "routes"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground"
+              }`}
           >
             <Route className="w-6 h-6" />
             <span className="text-xs font-medium">Rutas</span>
           </button>
+
           <button
             onClick={() => setActiveNav("pass")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "pass" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "pass"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground"
+              }`}
           >
             <Ticket className="w-6 h-6" />
             <span className="text-xs font-medium">Pase</span>
           </button>
+
           <button
             onClick={() => setActiveNav("notifications")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors relative ${activeNav === "notifications" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors relative ${activeNav === "notifications"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground"
+              }`}
           >
             <Bell className="w-6 h-6" />
             <span className="text-xs font-medium">Avisos</span>
@@ -254,9 +318,13 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
               </span>
             )}
           </button>
+
           <button
             onClick={() => setActiveNav("profile")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "profile" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "profile"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground"
+              }`}
           >
             <User className="w-6 h-6" />
             <span className="text-xs font-medium">Perfil</span>

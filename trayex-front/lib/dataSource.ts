@@ -52,49 +52,24 @@ export async function dsFetchStops(): Promise<StopRow[]> {
 }
 
 // ---------- ROUTES ----------
-export async function dsFetchRoutes(): Promise<RouteRow[]> {
-    if (SOURCE === "osm") {
-        const res = await fetch("/data/managua-routes.json", { cache: "no-store" });
-        if (!res.ok) return [];
-        const data = await res.json();
-        // Esperamos { routes: Array<OSMRoute> }
-        const routes: RouteRow[] = (data?.routes ?? []).map((r: any, idx: number) => {
-            // Intenta obtener una lista de paradas legibles
-            const mainStops: string[] =
-                r?.stops?.map((s: any) => s?.name).filter(Boolean) ??
-                r?.properties?.stops?.map((s: any) => s?.name).filter(Boolean) ??
-                [];
+export async function dsFetchRoutes() {
+    const source = process.env.NEXT_PUBLIC_DATA_SOURCE ?? "osm";
 
-            return {
-                id: String(r.id ?? r.ref ?? `route_${idx}`),
-                name: String(r.name ?? r.properties?.name ?? r.ref ?? `Ruta ${idx + 1}`),
-                description:
-                    r.properties?.description ??
-                    r.properties?.operator ??
-                    null,
-                mainStops: mainStops.slice(0, 6), // muestra algunas
-                status: "ACTIVE",
-                estimatedTime:
-                    r.properties?.duration ??
-                    r.properties?.expected_travel_time ??
-                    "—",
-                capacity: r.properties?.capacity ? String(r.properties.capacity) : "—",
-                isFavorite: false,
-            };
-        });
-        return routes;
+    if (source === "osm") {
+        const res = await fetch("/data/managua-routes.json");
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+        return data.routes ?? [];
     }
 
-    if (SOURCE === "api" && API_URL) {
-        const res = await fetch(`${API_URL}/routes`, { cache: "no-store" });
-        if (!res.ok) return [];
-        // Tu backend ya devuelve { routes: RouteRow[] }
-        const data = await res.json();
-        return data?.routes ?? [];
+    if (source === "api") {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/routes`);
+        return await res.json();
     }
 
     return [];
 }
+
 
 // Util para IDs cuando falten
 function cryptoRandomId() {

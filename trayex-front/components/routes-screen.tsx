@@ -5,7 +5,7 @@ import { Bus, MapPin, Clock, Heart, ChevronRight, Filter, Search } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { listZones, listStops, listTimeslots, createReservation, getMyReservations } from "@/lib/api";
+import { listZones, listStops, listTimeslots } from "@/lib/api";
 import { getToken } from "@/lib/session";
 import { dsFetchRoutes, dsFetchStops } from "@/lib/dataSource";
 
@@ -28,8 +28,10 @@ export type RouteRow = {
   estimatedTime: string;
   capacity: string;
   isFavorite: boolean;
-  // 👇 NUEVO: paradas en orden (si vienen en el JSON OSM)
+  // si tu JSON incluye el orden de paradas de la ruta:
   stops?: StopRow[];
+  // 👇 NUEVO: trayectoria de la ruta (como en tu managua-routes.json)
+  shape?: { lat: number; lng: number }[];
 };
 
 interface RoutesScreenProps {
@@ -39,7 +41,7 @@ interface RoutesScreenProps {
     from: { lat: number; lng: number; name?: string };
     to: { lat: number; lng: number; name?: string };
     stopsToShow: { lat: number; lng: number; name?: string }[];
-    path: { lat: number; lng: number }[]; // 👈 NUEVO
+    path: { lat: number; lng: number }[];
   }) => void;
 }
 
@@ -64,7 +66,9 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
   const [zones, setZones] = useState<Array<{ id: string; name: string }>>([]);
   const [zoneId, setZoneId] = useState<string>("");
   const [stops, setStops] = useState<Array<{ id: string; name: string }>>([]);
-  const [timeslots, setTimeslots] = useState<Array<{ id: string; startAt: string; endAt: string }>>([]);
+  const [timeslots, setTimeslots] = useState<
+    Array<{ id: string; startAt: string; endAt: string }>
+  >([]);
   const [stopId, setStopId] = useState<string>("");
   const [timeslotId, setTimeslotId] = useState<string>("");
   const [creating, setCreating] = useState(false);
@@ -76,6 +80,9 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
   const [toQuery, setToQuery] = useState("");
   const [fromStop, setFromStop] = useState<StopRow | null>(null);
   const [toStop, setToStop] = useState<StopRow | null>(null);
+
+  // 🌎 ubicación del usuario para "Usar mi ubicación"
+  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -93,8 +100,20 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
     })();
   }, []);
 
+  // pedir geolocalización una vez
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => setUserLoc(null),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }, []);
+
   const toggleFavorite = (routeId: string) => {
-    setRoutes((rs) => rs.map((r) => (r.id === routeId ? { ...r, isFavorite: !r.isFavorite } : r)));
+    setRoutes((rs) =>
+      rs.map((r) => (r.id === routeId ? { ...r, isFavorite: !r.isFavorite } : r))
+    );
   };
 
   // 🔎 filtro
@@ -107,7 +126,10 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
     });
   }, [routes, search]);
 
-  const shown = useMemo(() => (showAll ? filtered : filtered.slice(0, PAGE_SIZE)), [filtered, showAll]);
+  const shown = useMemo(
+    () => (showAll ? filtered : filtered.slice(0, PAGE_SIZE)),
+    [filtered, showAll]
+  );
 
   // reserva clásica
   const openReserveModal = async (route: RouteRow) => {
@@ -124,9 +146,14 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
       setZoneId(defaultZone);
 
       if (defaultZone) {
-        const [{ stops }, { timeslots }] = await Promise.all([listStops(defaultZone), listTimeslots(defaultZone)]);
+        const [{ stops }, { timeslots }] = await Promise.all([
+          listStops(defaultZone),
+          listTimeslots(defaultZone),
+        ]);
         setStops(stops.map((s) => ({ id: s.id, name: s.name })));
-        setTimeslots(timeslots.map((t) => ({ id: t.id, startAt: t.startAt, endAt: t.endAt })));
+        setTimeslots(
+          timeslots.map((t) => ({ id: t.id, startAt: t.startAt, endAt: t.endAt }))
+        );
         setStopId(stops[0]?.id || "");
         setTimeslotId(timeslots[0]?.id || "");
       }
@@ -149,10 +176,25 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
   const suggestStops = (q: string) => {
     const s = q.trim().toLowerCase();
     if (!s) return [];
-    return allStops
-      .filter((st) => st.name.toLowerCase().includes(s))
-      .slice(0, 8);
+    return allStops.filter((st) => st.name.toLowerCase().includes(s)).slice(0, 8);
   };
+
+  // parada más cercana a una ubicación
+  function nearestStop(stops: StopRow[], loc: { lat: number; lng: number }): StopRow | null {
+    if (!stops.length) return null;
+    let best = stops[0];
+    let bestD = Infinity;
+    for (const s of stops) {
+      const dx = s.lat - loc.lat;
+      const dy = s.lng - loc.lng;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestD) {
+        bestD = d2;
+        best = s;
+      }
+    }
+    return best || null;
+  }
 
   // corta el tramo A→B usando el orden de paradas de la ruta
   const slicePath = (route: RouteRow, fromId: string, toId: string) => {
@@ -167,20 +209,58 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
   const confirmPlan = () => {
     if (!planRoute || !fromStop || !toStop) return;
 
-    const path = slicePath(planRoute, fromStop.id, toStop.id) ?? [
-      // fallback: recta si no encontramos el orden
-      { lat: fromStop.lat, lng: fromStop.lng },
-      { lat: toStop.lat, lng: toStop.lng },
+    // 1️⃣ Elegir la polilínea a usar:
+    //    - si la ruta tiene shape -> usamos esa (forma real)
+    //    - si no, intentamos slicePath con paradas ordenadas
+    //    - si nada, caemos a la recta simple A→B
+    let path: { lat: number; lng: number }[];
+
+    if (planRoute.shape && planRoute.shape.length > 1) {
+      path = planRoute.shape;
+    } else {
+      const sliced = slicePath(planRoute, fromStop.id, toStop.id);
+      if (sliced && sliced.length > 1) {
+        path = sliced;
+      } else {
+        path = [
+          { lat: fromStop.lat, lng: fromStop.lng },
+          { lat: toStop.lat, lng: toStop.lng },
+        ];
+      }
+    }
+
+    // 2️⃣ Paradas a mostrar sobre el mapa
+    const stopsToShow: { lat: number; lng: number; name?: string }[] = [
+      { lat: fromStop.lat, lng: fromStop.lng, name: fromStop.name },
+      { lat: toStop.lat, lng: toStop.lng, name: toStop.name },
     ];
 
-    const stopsToShow = (planRoute.stops ?? [])
-      .filter((s) => path.some((p) => p.lat === s.lat && p.lng === s.lng))
-      .map((s) => ({ lat: s.lat, lng: s.lng, name: s.name }));
+    if (planRoute.stops && planRoute.stops.length) {
+      planRoute.stops.forEach((s) => {
+        if (
+          path.some(
+            (p) =>
+              Math.abs(p.lat - s.lat) < 1e-5 &&
+              Math.abs(p.lng - s.lng) < 1e-5
+          )
+        ) {
+          stopsToShow.push({ lat: s.lat, lng: s.lng, name: s.name });
+        }
+      });
+    }
 
     onPlannedTrip?.({
       routeId: planRoute.id,
-      from: { lat: fromStop.lat, lng: fromStop.lng, name: `Origen: ${fromStop.name}` },
-      to: { lat: toStop.lat, lng: toStop.lng, name: `Destino: ${toStop.name}` },
+      from: {
+        lat: fromStop.lat,
+        lng: fromStop.lng,
+        name: `Origen: ${fromStop.name}`,
+      },
+      to: {
+        lat: toStop.lat,
+        lng: toStop.lng,
+        name: `Destino: ${toStop.name}`,
+      },
       stopsToShow,
       path,
     });
@@ -200,7 +280,12 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
               {loading ? "Cargando..." : `Mostrando ${shown.length} de ${filtered.length}`}
             </p>
           </div>
-          <Button variant="outline" size="icon" className="rounded-full bg-transparent" onClick={() => setShowFilters(!showFilters)}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-transparent"
+            onClick={() => setShowFilters(!showFilters)}
+          >
             <Filter className="w-5 h-5" />
           </Button>
         </div>
@@ -219,13 +304,19 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
           />
         </div>
 
-        {err && <p className="text-xs text-red-600 bg-red-100/60 rounded-md p-2">{err}</p>}
+        {err && (
+          <p className="text-xs text-red-600 bg-red-100/60 rounded-md p-2">
+            {err}
+          </p>
+        )}
       </div>
 
       {/* Listado */}
       <div className="p-4 space-y-4">
         {!loading && shown.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center">No hay coincidencias.</p>
+          <p className="text-sm text-muted-foreground text-center">
+            No hay coincidencias.
+          </p>
         )}
 
         {shown.map((route, index) => (
@@ -241,20 +332,38 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
                     <Bus className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-foreground">{route.name}</h3>
-                    <p className="text-sm text-muted-foreground">{route.description}</p>
+                    <h3 className="font-bold text-lg text-foreground">
+                      {route.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {route.description}
+                    </p>
                   </div>
                 </div>
-                <button onClick={() => toggleFavorite(route.id)} className="flex-shrink-0 p-2 rounded-full hover:bg-muted transition-colors">
-                  <Heart className={`w-5 h-5 ${route.isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                <button
+                  onClick={() => toggleFavorite(route.id)}
+                  className="flex-shrink-0 p-2 rounded-full hover:bg-muted transition-colors"
+                >
+                  <Heart
+                    className={`w-5 h-5 ${route.isFavorite
+                        ? "fill-red-500 text-red-500"
+                        : "text-muted-foreground"
+                      }`}
+                  />
                 </button>
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Paradas principales</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Paradas principales
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {route.mainStops.slice(0, 3).map((stop, idx) => (
-                    <Badge key={idx} variant="secondary" className="rounded-full text-xs">
+                    <Badge
+                      key={idx}
+                      variant="secondary"
+                      className="rounded-full text-xs"
+                    >
                       <MapPin className="w-3 h-3 mr-1" />
                       {stop}
                     </Badge>
@@ -270,7 +379,9 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
               <div className="flex items-center gap-3 pt-2 border-t border-border">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Clock className="w-4 h-4" />
-                  <span className="text-xs font-medium">{route.estimatedTime}</span>
+                  <span className="text-xs font-medium">
+                    {route.estimatedTime}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Bus className="w-4 h-4" />
@@ -280,7 +391,10 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* Planificar (OSM) */}
-                <Button className="h-11 rounded-2xl font-semibold" onClick={() => openPlanModal(route)}>
+                <Button
+                  className="h-11 rounded-2xl font-semibold"
+                  onClick={() => openPlanModal(route)}
+                >
                   Planificar (Elegir origen/destino)
                   <ChevronRight className="w-5 h-5 ml-1" />
                 </Button>
@@ -292,7 +406,9 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
                   disabled={route.status === "INCIDENT"}
                   onClick={() => openReserveModal(route)}
                 >
-                  {route.status === "INCIDENT" ? "No disponible" : "Reservar (API)"}
+                  {route.status === "INCIDENT"
+                    ? "No disponible"
+                    : "Reservar (API)"}
                 </Button>
               </div>
             </div>
@@ -301,7 +417,11 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
 
         {filtered.length > PAGE_SIZE && !showAll && (
           <div className="pt-2">
-            <Button variant="outline" className="w-full rounded-xl" onClick={() => setShowAll(true)}>
+            <Button
+              variant="outline"
+              className="w-full rounded-xl"
+              onClick={() => setShowAll(true)}
+            >
               Ver más rutas
             </Button>
           </div>
@@ -310,9 +430,17 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
 
       {/* ===== Modal PLAN O/D (OSM) ===== */}
       {showPlanModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={() => setShowPlanModal(false)}>
-          <Card className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-foreground">Planificar en {planRoute?.name}</h2>
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+          onClick={() => setShowPlanModal(false)}
+        >
+          <Card
+            className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold text-foreground">
+              Planificar en {planRoute?.name}
+            </h2>
 
             {/* Origen */}
             <div className="space-y-2">
@@ -326,16 +454,45 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
                   setFromStop(null);
                 }}
               />
+
+              {/* Usar mi ubicación */}
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  disabled={!userLoc || allStops.length === 0}
+                  onClick={() => {
+                    if (!userLoc) return;
+                    const near = nearestStop(allStops, userLoc);
+                    if (near) {
+                      setFromStop(near);
+                      setFromQuery(near.name);
+                    }
+                  }}
+                >
+                  Usar mi ubicación
+                </Button>
+              </div>
+
               {fromQuery && !fromStop && (
                 <div className="border rounded-xl divide-y max-h-44 overflow-auto">
                   {suggestStops(fromQuery).map((s) => (
-                    <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-muted" onClick={() => setFromStop(s)}>
+                    <button
+                      key={s.id}
+                      className="w-full text-left px-3 py-2 hover:bg-muted"
+                      onClick={() => setFromStop(s)}
+                    >
                       {s.name}
                     </button>
                   ))}
                 </div>
               )}
-              {fromStop && <p className="text-xs text-muted-foreground">Seleccionado: {fromStop.name}</p>}
+              {fromStop && (
+                <p className="text-xs text-muted-foreground">
+                  Seleccionado: {fromStop.name}
+                </p>
+              )}
             </div>
 
             {/* Destino */}
@@ -353,20 +510,36 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
               {toQuery && !toStop && (
                 <div className="border rounded-xl divide-y max-h-44 overflow-auto">
                   {suggestStops(toQuery).map((s) => (
-                    <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-muted" onClick={() => setToStop(s)}>
+                    <button
+                      key={s.id}
+                      className="w-full text-left px-3 py-2 hover:bg-muted"
+                      onClick={() => setToStop(s)}
+                    >
                       {s.name}
                     </button>
                   ))}
                 </div>
               )}
-              {toStop && <p className="text-xs text-muted-foreground">Seleccionado: {toStop.name}</p>}
+              {toStop && (
+                <p className="text-xs text-muted-foreground">
+                  Seleccionado: {toStop.name}
+                </p>
+              )}
             </div>
 
             <div className="flex gap-2 pt-2">
-              <Button className="flex-1 rounded-xl" onClick={confirmPlan} disabled={!fromStop || !toStop}>
+              <Button
+                className="flex-1 rounded-xl"
+                onClick={confirmPlan}
+                disabled={!fromStop || !toStop}
+              >
                 Mostrar en el mapa
               </Button>
-              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowPlanModal(false)}>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => setShowPlanModal(false)}
+              >
                 Cancelar
               </Button>
             </div>
@@ -376,9 +549,17 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
 
       {/* ===== Modal reserva clásica (si la usas) ===== */}
       {showReserveModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={() => setShowReserveModal(false)}>
-          <Card className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-foreground">Reservar {selectedRoute?.name}</h2>
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+          onClick={() => setShowReserveModal(false)}
+        >
+          <Card
+            className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold text-foreground">
+              Reservar {selectedRoute?.name}
+            </h2>
             {/* aquí va tu UI de zonas/paradas/horarios si la mantienes */}
           </Card>
         </div>

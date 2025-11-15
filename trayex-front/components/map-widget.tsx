@@ -36,6 +36,9 @@ export function MapWidget({
     const routeMarkersRef = useRef<google.maps.Marker[]>([]);
     const polylineRef = useRef<google.maps.Polyline | null>(null);
 
+    // 👉 almacena el path calculado por Google Directions
+    const [directionsPath, setDirectionsPath] = useState<LatLng[] | null>(null);
+
     // Esperar a que google.maps exista
     useEffect(() => {
         let mounted = true;
@@ -83,7 +86,7 @@ export function MapWidget({
 
     const clearMarkers = (ref: React.MutableRefObject<google.maps.Marker[]>) => {
         ref.current.forEach((m) => m.setMap(null));
-        ref.current.length = 0; // 👈 vaciamos el array sin re-asignar
+        ref.current.length = 0;
     };
 
     // Buses
@@ -116,6 +119,48 @@ export function MapWidget({
         );
     }, [ready, stops]);
 
+    // 👉 Cuando no tenemos path útil pero sí origen/destino, pedir DIRECTIONS a Google
+    useEffect(() => {
+        if (!ready || !mapRef.current) return;
+
+        // Si ya viene un path bueno desde la ruta → no usamos Directions
+        if (path && path.length > 1) {
+            setDirectionsPath(null);
+            return;
+        }
+
+        // Necesitamos al menos origen y destino
+        if (!origin || !destination) return;
+
+        const service = new google.maps.DirectionsService();
+
+        service.route(
+            {
+                origin,
+                destination,
+                travelMode: google.maps.TravelMode.DRIVING,
+            },
+            (result, status) => {
+                if (
+                    status === google.maps.DirectionsStatus.OK &&
+                    result &&
+                    result.routes &&
+                    result.routes[0]?.overview_path
+                ) {
+                    const pts = result.routes[0].overview_path.map((p) => ({
+                        lat: p.lat(),
+                        lng: p.lng(),
+                    }));
+                    console.log("🧭 Directions path recibido:", pts.length, "puntos");
+                    setDirectionsPath(pts);
+                } else {
+                    console.warn("❌ Directions falló:", status, result);
+                    setDirectionsPath(null);
+                }
+            }
+        );
+    }, [ready, path, origin, destination]);
+
     // Línea + origen/destino + paradas del tramo
     useEffect(() => {
         if (!ready || !mapRef.current) return;
@@ -126,13 +171,27 @@ export function MapWidget({
         }
         clearMarkers(routeMarkersRef);
 
-        if (path && path.length > 1) {
+        // escoger qué path dibujar: el de la ruta o el de Directions
+        const effectivePath =
+            path && path.length > 1
+                ? path
+                : directionsPath && directionsPath.length > 1
+                    ? directionsPath
+                    : null;
+
+        if (effectivePath && effectivePath.length > 1) {
+            console.log("🗺️ Dibujando polyline con", effectivePath.length, "puntos");
             polylineRef.current = new google.maps.Polyline({
-                path,
+                path: effectivePath,
+                strokeColor: "#1D4ED8",
                 strokeOpacity: 1,
-                strokeWeight: 4,
+                strokeWeight: 5,
                 map: mapRef.current!,
             });
+
+            const bounds = new google.maps.LatLngBounds();
+            effectivePath.forEach((p) => bounds.extend(p));
+            mapRef.current.fitBounds(bounds);
         }
 
         if (origin) {
@@ -190,7 +249,7 @@ export function MapWidget({
                 );
             });
         }
-    }, [ready, path, origin, destination, stopsOnPath]);
+    }, [ready, path, directionsPath, origin, destination, stopsOnPath]);
 
     if (!ready) {
         return (
@@ -209,5 +268,4 @@ export function MapWidget({
     );
 }
 
-// 👇 por si en algún sitio lo importas como default
 export default MapWidget;

@@ -1,6 +1,3 @@
+// trayex-front/app/page.tsx
 
-import { redirect } from "next/navigation";
-
-export default function Home() {
-    redirect("/app"); // o "/dashboard" si así la llamas
-}
+export { default } from "./app/page";

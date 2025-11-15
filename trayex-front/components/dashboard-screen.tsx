@@ -88,6 +88,21 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     }
   }, []);
 
+  // 🔥 Buses “cerca de mí”
+  useEffect(() => {
+    if (!userLocation) {
+      setMapBuses([]);
+      return;
+    }
+
+    const base = userLocation;
+    setMapBuses([
+      { lat: base.lat + 0.001, lng: base.lng + 0.0015 },
+      { lat: base.lat - 0.0012, lng: base.lng - 0.0008 },
+      { lat: base.lat + 0.0005, lng: base.lng - 0.0012 },
+    ]);
+  }, [userLocation]);
+
   const center = userLocation ?? { lat: 12.136389, lng: -86.251389 };
 
   const handleReserveRoute = (routeName: string) => setTripInProgress(routeName);
@@ -111,7 +126,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     setOrigin({ lat: payload.from.lat, lng: payload.from.lng });
     setDestination({ lat: payload.to.lat, lng: payload.to.lng });
 
-    // path completo (shape) que viene de la ruta
+    // path completo (shape) que viene de la ruta, con fallback a recta
     const pathFromPayload =
       payload.path && payload.path.length >= 2
         ? payload.path
@@ -121,17 +136,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         ];
     setPath(pathFromPayload);
 
-    // buses de demo: alrededor del punto medio del path
-    if (pathFromPayload.length >= 2) {
-      const mid = pathFromPayload[Math.floor(pathFromPayload.length / 2)];
-      setMapBuses([
-        { lat: mid.lat + 0.0015, lng: mid.lng - 0.001 },
-        { lat: mid.lat - 0.001, lng: mid.lng + 0.0015 },
-      ]);
-    } else {
-      setMapBuses([]);
-    }
-
+    // buses ya no se generan desde la ruta, solo desde la ubicación
     setActiveNav("home");
   };
 

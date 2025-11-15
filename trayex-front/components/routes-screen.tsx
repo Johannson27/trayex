@@ -28,9 +28,9 @@ export type RouteRow = {
   estimatedTime: string;
   capacity: string;
   isFavorite: boolean;
-  // si tu JSON incluye el orden de paradas de la ruta:
+
+  // mismos campos opcionales que en lib/dataSource.ts
   stops?: StopRow[];
-  // 👇 NUEVO: trayectoria de la ruta (como en tu managua-routes.json)
   shape?: { lat: number; lng: number }[];
 };
 
@@ -116,13 +116,34 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
     );
   };
 
-  // 🔎 filtro
+  // helper: paradas disponibles para una ruta
+  const useRouteStops = (route: RouteRow | null): StopRow[] | null => {
+    if (route && route.stops && route.stops.length) {
+      return route.stops;
+    }
+    return null; // null = no hay datos específicos de esa ruta
+  };
+
+  // 🔎 filtro rutas: por nombre y por paradas
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return routes;
+
     return routes.filter((r) => {
       if (r.name.toLowerCase().includes(q)) return true;
-      return r.mainStops.some((s) => s.toLowerCase().includes(q));
+      if (r.description?.toLowerCase().includes(q)) return true;
+
+      // Paradas principales
+      if (r.mainStops.some((s) => s.toLowerCase().includes(q))) return true;
+
+      // Paradas detalladas de la ruta (si existen)
+      if (r.stops && r.stops.length) {
+        if (r.stops.some((st) => st.name.toLowerCase().includes(q))) {
+          return true;
+        }
+      }
+
+      return false;
     });
   }, [routes, search]);
 
@@ -172,11 +193,33 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
     setShowPlanModal(true);
   };
 
-  // sugerencias de paradas por texto
-  const suggestStops = (q: string) => {
+  // sugerencias de paradas por texto (según ruta cuando se pueda)
+  const suggestStops = (q: string, forRoute: RouteRow | null) => {
     const s = q.trim().toLowerCase();
-    if (!s) return [];
-    return allStops.filter((st) => st.name.toLowerCase().includes(s)).slice(0, 8);
+    if (!s) {
+      return {
+        suggestions: [] as StopRow[],
+        hasGlobalMatch: false,
+        usingRouteStops: false,
+      };
+    }
+
+    const routeStops = useRouteStops(forRoute);
+    const pool = routeStops ?? allStops;
+
+    const suggestions = pool
+      .filter((st) => st.name.toLowerCase().includes(s))
+      .slice(0, 8);
+
+    const hasGlobalMatch = allStops.some((st) =>
+      st.name.toLowerCase().includes(s)
+    );
+
+    return {
+      suggestions,
+      hasGlobalMatch,
+      usingRouteStops: !!routeStops,
+    };
   };
 
   // parada más cercana a una ubicación
@@ -199,12 +242,56 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
   // corta el tramo A→B usando el orden de paradas de la ruta
   const slicePath = (route: RouteRow, fromId: string, toId: string) => {
     const arr = route.stops ?? [];
+    if (!arr.length) return null;
+
     const a = arr.findIndex((x) => x.id === fromId);
     const b = arr.findIndex((x) => x.id === toId);
+
     if (a === -1 || b === -1) return null;
     if (a >= b) return null; // asumimos sentido A→B
-    return arr.slice(a, b + 1).map((s) => ({ lat: s.lat, lng: s.lng }));
+
+    return arr.slice(a, b + 1).map((s) => ({
+      lat: s.lat,
+      lng: s.lng,
+    }));
   };
+
+  // corta el shape completo de la ruta entre las paradas de origen y destino
+  function cutShapeByStops(
+    shape: { lat: number; lng: number }[],
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number }
+  ) {
+    if (!Array.isArray(shape) || shape.length < 2) return null;
+
+    const nearestIndex = (target: { lat: number; lng: number }) => {
+      let best = 0;
+      let bestD = Infinity;
+      shape.forEach((p, i) => {
+        const dx = p.lat - target.lat;
+        const dy = p.lng - target.lng;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestD) {
+          bestD = d2;
+          best = i;
+        }
+      });
+      return best;
+    };
+
+    const iA = nearestIndex(from);
+    const iB = nearestIndex(to);
+
+    if (iA === iB) return null;
+
+    if (iA < iB) {
+      return shape.slice(iA, iB + 1);
+    }
+
+    return [...shape.slice(iB, iA + 1)].reverse();
+  }
+
+  const MIN_SHAPE_POINTS = 3;
 
   const confirmPlan = () => {
     if (!planRoute || !fromStop || !toStop) {
@@ -215,12 +302,24 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
     console.log("📌 planRoute.id:", planRoute.id);
     console.log("📌 planRoute.shape:", planRoute.shape);
 
-    let path: { lat: number; lng: number }[];
+    // 👇 importante: inicializado en []
+    let path: { lat: number; lng: number }[] = [];
 
-    // 1️⃣ — Shape real (si existe)
-    if (planRoute.shape && planRoute.shape.length > 1) {
-      console.log("🟢 USANDO SHAPE REAL — puntos:", planRoute.shape.length);
-      path = planRoute.shape;
+    // 1️⃣ — Usar shape REAL, recortado entre las paradas si hay shape
+    if (
+      planRoute.shape &&
+      Array.isArray(planRoute.shape) &&
+      planRoute.shape.length >= MIN_SHAPE_POINTS
+    ) {
+      const cut = cutShapeByStops(planRoute.shape, fromStop, toStop);
+
+      if (cut && cut.length >= 2) {
+        console.log("🟢 USANDO SHAPE CORTADO — puntos:", cut.length);
+        path = cut;
+      } else {
+        console.log("🟢 USANDO SHAPE COMPLETO — puntos:", planRoute.shape.length);
+        path = planRoute.shape;
+      }
 
     } else {
       // 2️⃣ — Intentar cortar tramo usando el orden de paradas
@@ -233,40 +332,25 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
         path = sliced;
 
       } else {
-        // 3️⃣ — Fallback: línea recta
-        console.log("🔴 USANDO LÍNEA RECTA entre origen y destino");
-        path = [
-          { lat: fromStop.lat, lng: fromStop.lng },
-          { lat: toStop.lat, lng: toStop.lng },
-        ];
+        // 3️⃣ — Fallback: NO dibujar recta, dejamos path vacío
+        console.log("🔴 SIN SHAPE NI STOPS ORDENADOS → dejar path vacío y usar Directions");
+        path = []; // 👈 aquí está la diferencia gorda
       }
     }
 
-    // 2️⃣ Paradas a mostrar
+    // Paradas a mostrar en el resumen / mapa
     const stopsToShow = [
-      { lat: fromStop.lat, lng: fromStop.lng, name: fromStop.name },
-      { lat: toStop.lat, lng: toStop.lng, name: toStop.name },
+      {
+        lat: fromStop.lat,
+        lng: fromStop.lng,
+        name: fromStop.name,
+      },
+      {
+        lat: toStop.lat,
+        lng: toStop.lng,
+        name: toStop.name,
+      },
     ];
-
-    if (planRoute.stops) {
-      console.log("📌 Comparando paradas para stopsToShow… total:", planRoute.stops.length);
-      planRoute.stops.forEach((s) => {
-        if (
-          path.some(
-            (p) =>
-              Math.abs(p.lat - s.lat) < 1e-5 &&
-              Math.abs(p.lng - s.lng) < 1e-5
-          )
-        ) {
-          console.log("🔵 Parada dentro del path:", s.name);
-          stopsToShow.push({
-            lat: s.lat,
-            lng: s.lng,
-            name: s.name,
-          });
-        }
-      });
-    }
 
     console.log("🧭 Path final enviado a DashboardScreen:", path.length, "puntos");
     console.log("🚌 Paradas finales en stopsToShow:", stopsToShow.length);
@@ -284,11 +368,12 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
         name: `Destino: ${toStop.name}`,
       },
       stopsToShow,
-      path,
+      path, // puede ir vacío, y el MapWidget se encargará con Directions
     });
 
     setShowPlanModal(false);
   };
+
 
   // === UI ===
   return (
@@ -321,7 +406,7 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
               setSearch(e.target.value);
               setShowAll(false);
             }}
-            placeholder="Buscar ruta o parada principal…"
+            placeholder="Buscar ruta o parada…"
             className="w-full pl-10 pr-3 h-11 rounded-xl border bg-background"
           />
         </div>
@@ -499,15 +584,36 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
 
               {fromQuery && !fromStop && (
                 <div className="border rounded-xl divide-y max-h-44 overflow-auto">
-                  {suggestStops(fromQuery).map((s) => (
-                    <button
-                      key={s.id}
-                      className="w-full text-left px-3 py-2 hover:bg-muted"
-                      onClick={() => setFromStop(s)}
-                    >
-                      {s.name}
-                    </button>
-                  ))}
+                  {(() => {
+                    const { suggestions, hasGlobalMatch, usingRouteStops } =
+                      suggestStops(fromQuery, planRoute);
+
+                    if (suggestions.length > 0) {
+                      return suggestions.map((s) => (
+                        <button
+                          key={s.id}
+                          className="w-full text-left px-3 py-2 hover:bg-muted"
+                          onClick={() => setFromStop(s)}
+                        >
+                          {s.name}
+                        </button>
+                      ));
+                    }
+
+                    if (usingRouteStops && hasGlobalMatch) {
+                      return (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">
+                          Esta ruta no pasa por esta ubicación.
+                        </p>
+                      );
+                    }
+
+                    return (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        No encontramos paradas con ese nombre.
+                      </p>
+                    );
+                  })()}
                 </div>
               )}
               {fromStop && (
@@ -531,15 +637,36 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
               />
               {toQuery && !toStop && (
                 <div className="border rounded-xl divide-y max-h-44 overflow-auto">
-                  {suggestStops(toQuery).map((s) => (
-                    <button
-                      key={s.id}
-                      className="w-full text-left px-3 py-2 hover:bg-muted"
-                      onClick={() => setToStop(s)}
-                    >
-                      {s.name}
-                    </button>
-                  ))}
+                  {(() => {
+                    const { suggestions, hasGlobalMatch, usingRouteStops } =
+                      suggestStops(toQuery, planRoute);
+
+                    if (suggestions.length > 0) {
+                      return suggestions.map((s) => (
+                        <button
+                          key={s.id}
+                          className="w-full text-left px-3 py-2 hover:bg-muted"
+                          onClick={() => setToStop(s)}
+                        >
+                          {s.name}
+                        </button>
+                      ));
+                    }
+
+                    if (usingRouteStops && hasGlobalMatch) {
+                      return (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">
+                          Esta ruta no pasa por esta ubicación.
+                        </p>
+                      );
+                    }
+
+                    return (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        No encontramos paradas con ese nombre.
+                      </p>
+                    );
+                  })()}
                 </div>
               )}
               {toStop && (

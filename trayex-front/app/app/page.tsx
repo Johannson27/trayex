@@ -56,13 +56,7 @@ export default function Home() {
         }
     }, []);
 
-    useEffect(() => {
-        const t = getToken();
-        if (!t) {
-            // si no hay token, vuelve a la landing
-            window.location.href = "/";
-        }
-    }, []);
+    
 
     return (
         <main className="min-h-screen bg-background overflow-hidden">

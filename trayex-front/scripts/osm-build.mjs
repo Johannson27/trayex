@@ -1,4 +1,7 @@
-// scripts/osm-build.mjs  (ESM)
+// scripts/osm-build.mjs (ESM) — genera:
+// - public/data/managua-stops.json
+// - public/data/managua-routes.json (con shape + stops por ruta)
+
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,16 +40,16 @@ async function ensureDirFor(filePath) {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
 }
 
-// ------------- LECTURA -------------
+// ========= 1) LECTURA =========
 const stopsRaw = JSON.parse(await fs.readFile(stopsIn, "utf8"));
 const routesRaw = JSON.parse(await fs.readFile(routesIn, "utf8"));
 
-// ------------- TRANSFORM: PARADAS -------------
-// Espera GeoJSON con FeatureCollection de Point
+// ========= 2) PARADAS GLOBALES (GeoJSON) =========
+// Espera FeatureCollection con Point
 const stops = (stopsRaw.features ?? [])
-    .filter(f => f?.geometry?.type === "Point")
+    .filter((f) => f?.geometry?.type === "Point")
     .map((f, i) => {
-        const [lng, lat] = f.geometry.coordinates ?? [];
+        const [lng, lat] = f.geometry.coordinates;
         const p = f.properties ?? {};
         const name =
             p.name ??
@@ -58,11 +61,18 @@ const stops = (stopsRaw.features ?? [])
         return { id, name, lat, lng, isSafe: true };
     });
 
-// ------------- TRANSFORM: RUTAS -------------
-// Overpass “raw” suele venir como { elements:[ ... ] }
+// ========= 3) INDICES OSM (nodes/ways/relations) =========
 const elements = routesRaw.elements ?? [];
-// Toma relations/ways con route=bus o public_transport=route
-const routeElems = elements.filter(e => {
+
+const nodes = elements.filter((e) => e.type === "node");
+const ways = elements.filter((e) => e.type === "way");
+const relations = elements.filter((e) => e.type === "relation");
+
+const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+const wayMap = new Map(ways.map((w) => [w.id, w]));
+
+// ========= 4) FILTRAR RUTAS DE BUS =========
+const routeElems = relations.filter((e) => {
     const t = e.tags ?? {};
     return t.route === "bus" || t.public_transport === "route";
 });
@@ -76,34 +86,93 @@ function pickName(tags = {}) {
     );
 }
 
+// Construye el shape (lista de puntos) a partir de los ways de la relación
+function buildShapeForRelation(rel) {
+    const coords = [];
+    for (const m of rel.members ?? []) {
+        if (m.type !== "way") continue;
+        const way = wayMap.get(m.ref);
+        if (!way || !Array.isArray(way.nodes)) continue;
+
+        for (const nodeId of way.nodes) {
+            const n = nodeMap.get(nodeId);
+            if (!n) continue;
+            const lat = Number(n.lat);
+            const lng = Number(n.lon);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+            if (coords.length) {
+                const last = coords[coords.length - 1];
+                if (
+                    Math.abs(last.lat - lat) < 1e-6 &&
+                    Math.abs(last.lng - lng) < 1e-6
+                ) {
+                    continue; // evitar duplicados seguidos
+                }
+            }
+            coords.push({ lat, lng });
+        }
+    }
+    return coords;
+}
+
+// Extrae paradas para la ruta a partir de miembros tipo node con tags de parada
+function extractStopsForRelation(rel) {
+    const routeStops = [];
+    for (const m of rel.members ?? []) {
+        if (m.type !== "node") continue;
+        const node = nodeMap.get(m.ref);
+        const tags = (node && node.tags) || m.tags || {};
+        const isStop =
+            tags.highway === "bus_stop" ||
+            tags.public_transport === "platform" ||
+            tags.public_transport === "stop_position";
+
+        if (!isStop) continue;
+
+        const lat = Number(node?.lat);
+        const lng = Number(node?.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+        const name =
+            tags.name ?? tags["name:es"] ?? tags.ref ?? "Parada sin nombre";
+
+        routeStops.push({
+            id: String(node?.id ?? m.ref),
+            name,
+            lat,
+            lng,
+            isSafe: true,
+        });
+    }
+    return routeStops;
+}
+
+// ========= 5) ARMAR RUTAS =========
 const routes = routeElems.map((e, idx) => {
     const tags = e.tags ?? {};
     const name = pickName(tags);
-    // intenta extraer paradas (depende del dataset)
-    const mainStops = [];
-    if (Array.isArray(e.members)) {
-        for (const m of e.members) {
-            if ((m.role === "stop" || m.role === "platform") && m?.tags?.name) {
-                mainStops.push(m.tags.name);
-            } else if (m?.type === "node" && m?.tags?.name) {
-                mainStops.push(m.tags.name);
-            }
-            if (mainStops.length >= 5) break;
-        }
-    }
+
+    const shape = buildShapeForRelation(e);
+    const stopsForRoute = extractStopsForRelation(e);
+    const mainStops = stopsForRoute.slice(0, 5).map((s) => s.name);
+
     return {
         id: String(e.id ?? `route_${idx + 1}`),
         name,
         description: tags.operator ?? null,
-        mainStops: mainStops.length ? mainStops : [],
+        mainStops,
         status: "ACTIVE",
         estimatedTime: tags.duration ?? "—",
         capacity: tags.capacity ?? "—",
         isFavorite: false,
+        // campos que tu front ya espera
+        stops: stopsForRoute,
+        shape,
     };
 });
 
-// ------------- ESCRITURA -------------
+// ========= 6) ESCRITURA =========
 await ensureDirFor(stopsOut);
 await ensureDirFor(routesOut);
 
@@ -111,5 +180,7 @@ await fs.writeFile(stopsOut, JSON.stringify({ stops }, null, 2), "utf8");
 await fs.writeFile(routesOut, JSON.stringify({ routes }, null, 2), "utf8");
 
 console.log(
-    `OK • Generados:\n  - ${path.resolve(stopsOut)}\n  - ${path.resolve(routesOut)}`
+    `OK • Generados:\n  - ${path.resolve(stopsOut)}\n  - ${path.resolve(
+        routesOut
+    )}`
 );

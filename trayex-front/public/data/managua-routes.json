@@ -8,7 +8,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2602440",
@@ -18,7 +20,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2602458",
@@ -28,7 +32,9 @@
       "status": "ACTIVE",
       "estimatedTime": "45",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2602495",
@@ -38,7 +44,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2602869",
@@ -48,7 +56,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2606743",
@@ -58,7 +68,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2606806",
@@ -68,7 +80,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2606881",
@@ -78,7 +92,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2607453",
@@ -88,7 +104,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2607516",
@@ -98,7 +116,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2607580",
@@ -108,7 +128,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2608650",
@@ -118,7 +140,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2608742",
@@ -128,7 +152,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2614526",
@@ -138,7 +164,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2616965",
@@ -148,7 +176,9 @@
       "status": "ACTIVE",
       "estimatedTime": "95",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2665333",
@@ -158,7 +188,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2730510",
@@ -168,7 +200,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2739256",
@@ -178,7 +212,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2879899",
@@ -188,7 +224,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2879951",
@@ -198,7 +236,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2941129",
@@ -208,7 +248,9 @@
       "status": "ACTIVE",
       "estimatedTime": "70",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2941501",
@@ -218,7 +260,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2941503",
@@ -228,7 +272,9 @@
       "status": "ACTIVE",
       "estimatedTime": "70",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2941631",
@@ -238,7 +284,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2942156",
@@ -248,7 +296,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2942162",
@@ -258,7 +308,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "2942229",
@@ -268,7 +320,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3126759",
@@ -278,7 +332,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3155254",
@@ -288,7 +344,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3182542",
@@ -298,7 +356,9 @@
       "status": "ACTIVE",
       "estimatedTime": "100",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3199877",
@@ -308,7 +368,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3199878",
@@ -318,7 +380,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3201772",
@@ -328,7 +392,9 @@
       "status": "ACTIVE",
       "estimatedTime": "100",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3213716",
@@ -338,7 +404,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3279637",
@@ -348,7 +416,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3283256",
@@ -358,7 +428,9 @@
       "status": "ACTIVE",
       "estimatedTime": "110",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3291966",
@@ -368,7 +440,9 @@
       "status": "ACTIVE",
       "estimatedTime": "95",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3293473",
@@ -378,7 +452,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3376761",
@@ -388,7 +464,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3751865",
@@ -398,7 +476,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3751885",
@@ -408,7 +488,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3753499",
@@ -418,7 +500,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3753516",
@@ -428,7 +512,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "3877882",
@@ -438,7 +524,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4245551",
@@ -448,7 +536,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4266316",
@@ -458,7 +548,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4268979",
@@ -468,7 +560,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4279121",
@@ -478,7 +572,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4284473",
@@ -488,7 +584,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4287285",
@@ -498,7 +596,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4420884",
@@ -508,7 +608,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4439329",
@@ -518,7 +620,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4450949",
@@ -528,7 +632,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4463818",
@@ -538,7 +644,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4464027",
@@ -548,7 +656,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4482498",
@@ -558,7 +668,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4482796",
@@ -568,7 +680,9 @@
       "status": "ACTIVE",
       "estimatedTime": "100",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4485305",
@@ -578,7 +692,9 @@
       "status": "ACTIVE",
       "estimatedTime": "100",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4501269",
@@ -588,7 +704,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4503689",
@@ -598,7 +716,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4508224",
@@ -608,7 +728,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4512869",
@@ -618,7 +740,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4512987",
@@ -628,7 +752,9 @@
       "status": "ACTIVE",
       "estimatedTime": "110",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4553998",
@@ -638,7 +764,9 @@
       "status": "ACTIVE",
       "estimatedTime": "45",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "4559121",
@@ -648,7 +776,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5357337",
@@ -658,7 +788,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5435724",
@@ -668,7 +800,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5438277",
@@ -678,7 +812,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5446754",
@@ -688,7 +824,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5449249",
@@ -698,7 +836,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5450299",
@@ -708,7 +848,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5450896",
@@ -718,7 +860,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5453245",
@@ -728,7 +872,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5453740",
@@ -738,7 +884,9 @@
       "status": "ACTIVE",
       "estimatedTime": "110",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5463744",
@@ -748,7 +896,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5709365",
@@ -758,7 +908,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5709468",
@@ -768,7 +920,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5709563",
@@ -778,7 +932,9 @@
       "status": "ACTIVE",
       "estimatedTime": "100",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5709564",
@@ -788,7 +944,9 @@
       "status": "ACTIVE",
       "estimatedTime": "100",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5709615",
@@ -798,7 +956,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5709616",
@@ -808,7 +968,9 @@
       "status": "ACTIVE",
       "estimatedTime": "80",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5714046",
@@ -818,7 +980,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5714047",
@@ -828,7 +992,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5859063",
@@ -838,7 +1004,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5859064",
@@ -848,7 +1016,9 @@
       "status": "ACTIVE",
       "estimatedTime": "75",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5860303",
@@ -858,7 +1028,9 @@
       "status": "ACTIVE",
       "estimatedTime": "110",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5872493",
@@ -868,7 +1040,9 @@
       "status": "ACTIVE",
       "estimatedTime": "70",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5872784",
@@ -878,7 +1052,9 @@
       "status": "ACTIVE",
       "estimatedTime": "70",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5910107",
@@ -888,7 +1064,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "5910108",
@@ -898,7 +1076,9 @@
       "status": "ACTIVE",
       "estimatedTime": "60",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "6184303",
@@ -908,7 +1088,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "6184304",
@@ -918,7 +1100,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "6184352",
@@ -928,7 +1112,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "6184353",
@@ -938,7 +1124,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "6666642",
@@ -948,7 +1136,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7662612",
@@ -958,7 +1148,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7662613",
@@ -968,7 +1160,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7665429",
@@ -978,7 +1172,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7696747",
@@ -988,7 +1184,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7704308",
@@ -998,7 +1196,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7704411",
@@ -1008,7 +1208,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7752731",
@@ -1018,7 +1220,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "7752732",
@@ -1028,7 +1232,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8027645",
@@ -1038,7 +1244,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8120674",
@@ -1048,7 +1256,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8134923",
@@ -1058,7 +1268,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8136520",
@@ -1068,7 +1280,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8395628",
@@ -1078,7 +1292,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8395629",
@@ -1088,7 +1304,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8395631",
@@ -1098,7 +1316,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8398209",
@@ -1108,7 +1328,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8398210",
@@ -1118,7 +1340,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "8635727",
@@ -1128,7 +1352,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "9180382",
@@ -1138,7 +1364,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10465264",
@@ -1148,7 +1376,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515172",
@@ -1158,7 +1388,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515173",
@@ -1168,7 +1400,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515174",
@@ -1178,7 +1412,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515175",
@@ -1188,7 +1424,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515191",
@@ -1198,7 +1436,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515192",
@@ -1208,7 +1448,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515193",
@@ -1218,7 +1460,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10515194",
@@ -1228,7 +1472,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10524856",
@@ -1238,7 +1484,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10524857",
@@ -1248,7 +1496,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "10548148",
@@ -1258,7 +1508,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "11059413",
@@ -1268,7 +1520,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "11228556",
@@ -1278,7 +1532,9 @@
       "status": "ACTIVE",
       "estimatedTime": "30",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "11228557",
@@ -1288,7 +1544,9 @@
       "status": "ACTIVE",
       "estimatedTime": "30",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "12587373",
@@ -1298,7 +1556,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "12704550",
@@ -1308,7 +1568,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "12715510",
@@ -1318,7 +1580,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "13997381",
@@ -1328,7 +1592,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "13997382",
@@ -1338,7 +1604,9 @@
       "status": "ACTIVE",
       "estimatedTime": "90",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "14036915",
@@ -1348,7 +1616,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "14042826",
@@ -1358,7 +1628,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "14295000",
@@ -1368,7 +1640,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "14320081",
@@ -1378,7 +1652,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "14606056",
@@ -1388,7 +1664,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     },
     {
       "id": "19462605",
@@ -1398,7 +1676,9 @@
       "status": "ACTIVE",
       "estimatedTime": "—",
       "capacity": "—",
-      "isFavorite": false
+      "isFavorite": false,
+      "stops": [],
+      "shape": []
     }
   ]
 }

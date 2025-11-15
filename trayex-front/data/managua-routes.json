@@ -12,7 +12,21 @@
             "status": "ACTIVE",
             "estimatedTime": "35–45 min",
             "capacity": "Bus estándar",
-            "isFavorite": false
+            "isFavorite": false,
+            "shape": [
+                {
+                    "lat": 12.13001,
+                    "lng": -86.26345
+                },
+                {
+                    "lat": 12.1303,
+                    "lng": -86.2629
+                },
+                {
+                    "lat": 12.1308,
+                    "lng": -86.2621
+                }
+            ]
         },
         {
             "id": "rt-110",
@@ -41,34 +55,6 @@
             "estimatedTime": "25–35 min",
             "capacity": "Bus articulado",
             "isFavorite": false
-        },
-        {
-            "id": "102",
-            "name": "Ruta 102",
-            "description": "UNAN ↔ Plaza Inter",
-            "mainStops": [
-                "UNAN Managua",
-                "Metrocentro",
-                "Plaza Inter"
-            ],
-            "status": "ACTIVE",
-            "estimatedTime": "—",
-            "capacity": "—",
-            "isFavorite": false,
-            "shape": [
-                {
-                    "lat": 12.13001,
-                    "lng": -86.26345
-                },
-                {
-                    "lat": 12.1303,
-                    "lng": -86.2629
-                },
-                {
-                    "lat": 12.1308,
-                    "lng": -86.2621
-                }
-            ]
         }
     ]
 }

@@ -207,21 +207,34 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
   };
 
   const confirmPlan = () => {
-    if (!planRoute || !fromStop || !toStop) return;
+    if (!planRoute || !fromStop || !toStop) {
+      console.log("❌ No hay planRoute, fromStop o toStop");
+      return;
+    }
 
-    // 1️⃣ Elegir la polilínea a usar:
-    //    - si la ruta tiene shape -> usamos esa (forma real)
-    //    - si no, intentamos slicePath con paradas ordenadas
-    //    - si nada, caemos a la recta simple A→B
+    console.log("📌 planRoute.id:", planRoute.id);
+    console.log("📌 planRoute.shape:", planRoute.shape);
+
     let path: { lat: number; lng: number }[];
 
+    // 1️⃣ — Shape real (si existe)
     if (planRoute.shape && planRoute.shape.length > 1) {
+      console.log("🟢 USANDO SHAPE REAL — puntos:", planRoute.shape.length);
       path = planRoute.shape;
+
     } else {
+      // 2️⃣ — Intentar cortar tramo usando el orden de paradas
       const sliced = slicePath(planRoute, fromStop.id, toStop.id);
+
+      console.log("🟡 slicePath() retornó:", sliced ? sliced.length : "null");
+
       if (sliced && sliced.length > 1) {
+        console.log("🟡 USANDO slicePath — puntos:", sliced.length);
         path = sliced;
+
       } else {
+        // 3️⃣ — Fallback: línea recta
+        console.log("🔴 USANDO LÍNEA RECTA entre origen y destino");
         path = [
           { lat: fromStop.lat, lng: fromStop.lng },
           { lat: toStop.lat, lng: toStop.lng },
@@ -229,13 +242,14 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
       }
     }
 
-    // 2️⃣ Paradas a mostrar sobre el mapa
-    const stopsToShow: { lat: number; lng: number; name?: string }[] = [
+    // 2️⃣ Paradas a mostrar
+    const stopsToShow = [
       { lat: fromStop.lat, lng: fromStop.lng, name: fromStop.name },
       { lat: toStop.lat, lng: toStop.lng, name: toStop.name },
     ];
 
-    if (planRoute.stops && planRoute.stops.length) {
+    if (planRoute.stops) {
+      console.log("📌 Comparando paradas para stopsToShow… total:", planRoute.stops.length);
       planRoute.stops.forEach((s) => {
         if (
           path.some(
@@ -244,10 +258,18 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
               Math.abs(p.lng - s.lng) < 1e-5
           )
         ) {
-          stopsToShow.push({ lat: s.lat, lng: s.lng, name: s.name });
+          console.log("🔵 Parada dentro del path:", s.name);
+          stopsToShow.push({
+            lat: s.lat,
+            lng: s.lng,
+            name: s.name,
+          });
         }
       });
     }
+
+    console.log("🧭 Path final enviado a DashboardScreen:", path.length, "puntos");
+    console.log("🚌 Paradas finales en stopsToShow:", stopsToShow.length);
 
     onPlannedTrip?.({
       routeId: planRoute.id,
@@ -346,8 +368,8 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
                 >
                   <Heart
                     className={`w-5 h-5 ${route.isFavorite
-                        ? "fill-red-500 text-red-500"
-                        : "text-muted-foreground"
+                      ? "fill-red-500 text-red-500"
+                      : "text-muted-foreground"
                       }`}
                   />
                 </button>

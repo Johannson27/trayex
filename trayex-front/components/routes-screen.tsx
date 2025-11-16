@@ -351,6 +351,26 @@ export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProp
         name: toStop.name,
       },
     ];
+    function downsamplePath(
+      pts: { lat: number; lng: number }[],
+      step: number
+    ) {
+      if (pts.length <= step) return pts;
+      const out = [];
+      for (let i = 0; i < pts.length; i += step) {
+        out.push(pts[i]);
+      }
+      // asegúrate de incluir el último
+      if (pts[pts.length - 1] !== out[out.length - 1]) {
+        out.push(pts[pts.length - 1]);
+      }
+      return out;
+    }
+
+    let finalPath = path;
+    if (path.length > 1000) {
+      finalPath = downsamplePath(path, 3); // cada 3 puntos, por ejemplo
+    }
 
     console.log("🧭 Path final enviado a DashboardScreen:", path.length, "puntos");
     console.log("🚌 Paradas finales en stopsToShow:", stopsToShow.length);

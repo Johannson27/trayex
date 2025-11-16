@@ -249,6 +249,21 @@ export function MapWidget({
                 );
             });
         }
+        if (path && path.length > 1 && mapRef.current && polylineRef.current) {
+            const bounds = new google.maps.LatLngBounds();
+            path.forEach((p) => {
+                bounds.extend(new google.maps.LatLng(p.lat, p.lng));
+            });
+
+            // Márgenes para que no quede pegado a los bordes ni tapado por la card
+            mapRef.current.fitBounds(bounds, {
+                top: 50,
+                bottom: 220,
+                left: 40,
+                right: 40,
+            } as any);
+        }
+
     }, [ready, path, directionsPath, origin, destination, stopsOnPath]);
 
     if (!ready) {

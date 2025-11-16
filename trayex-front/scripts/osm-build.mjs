@@ -1,186 +1,170 @@
-// scripts/osm-build.mjs (ESM) — genera:
-// - public/data/managua-stops.json
-// - public/data/managua-routes.json (con shape + stops por ruta)
+// scripts/osm-build.mjs
+import fs from "fs";
+import path from "path";
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Parseo simple de args: --clave valor
-function parseArgs(argv) {
-    const args = {};
-    for (let i = 2; i < argv.length; i++) {
-        const key = argv[i];
-        if (!key.startsWith("--")) continue;
-        const val = argv[i + 1];
-        args[key] = val;
-        i++;
+// --- parseo super simple de argumentos tipo --foo valor ---
+function parseArgs() {
+    const args = process.argv.slice(2);
+    const out = {};
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (arg.startsWith("--")) {
+            const key = arg.slice(2);
+            const val = args[i + 1];
+            out[key] = val;
+            i++;
+        }
     }
-    return args;
+    return out;
 }
 
-const args = parseArgs(process.argv);
-const stopsIn = args["--stops"];
-const routesIn = args["--routes"];
-const stopsOut = args["--out-stops"];
-const routesOut = args["--out-routes"];
+const args = parseArgs();
 
-if (!stopsIn || !routesIn || !stopsOut || !routesOut) {
+if (!args.stops || !args.routes || !args["out-stops"] || !args["out-routes"]) {
     console.error(
-        "Uso: node scripts/osm-build.mjs --stops <geojson> --routes <overpass.json> --out-stops <out.json> --out-routes <out.json>"
+        "Uso: node scripts/osm-build.mjs --stops raw/managua-stops.geojson --routes raw/managua-bus-routes-overpass.json --out-stops public/data/managua-stops.json --out-routes public/data/managua-routes.json"
     );
     process.exit(1);
 }
 
-// util
-async function ensureDirFor(filePath) {
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-}
+const stopsInput = path.resolve(args.stops);
+const routesInput = path.resolve(args.routes);
+const stopsOutput = path.resolve(args["out-stops"]);
+const routesOutput = path.resolve(args["out-routes"]);
 
-// ========= 1) LECTURA =========
-const stopsRaw = JSON.parse(await fs.readFile(stopsIn, "utf8"));
-const routesRaw = JSON.parse(await fs.readFile(routesIn, "utf8"));
+console.log("📥 Leyendo stops desde:", stopsInput);
+console.log("📥 Leyendo rutas OSM desde:", routesInput);
 
-// ========= 2) PARADAS GLOBALES (GeoJSON) =========
-// Espera FeatureCollection con Point
-const stops = (stopsRaw.features ?? [])
-    .filter((f) => f?.geometry?.type === "Point")
-    .map((f, i) => {
-        const [lng, lat] = f.geometry.coordinates;
-        const p = f.properties ?? {};
-        const name =
-            p.name ??
-            p.ref ??
-            p.stop_name ??
-            p["name:es"] ??
-            `Parada ${i + 1}`;
-        const id = String(p.id ?? p["@id"] ?? p.osm_id ?? `stop_${i + 1}`);
-        return { id, name, lat, lng, isSafe: true };
-    });
+// === 1) STOPS: GeoJSON -> formato de la app ===
+const stopsGeo = JSON.parse(fs.readFileSync(stopsInput, "utf8"));
 
-// ========= 3) INDICES OSM (nodes/ways/relations) =========
-const elements = routesRaw.elements ?? [];
+const stopsOut = (stopsGeo.features || []).map((feat, idx) => {
+    const props = feat.properties || {};
+    const coords = feat.geometry?.coordinates || [0, 0]; // [lng, lat]
 
-const nodes = elements.filter((e) => e.type === "node");
-const ways = elements.filter((e) => e.type === "way");
-const relations = elements.filter((e) => e.type === "relation");
-
-const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-const wayMap = new Map(ways.map((w) => [w.id, w]));
-
-// ========= 4) FILTRAR RUTAS DE BUS =========
-const routeElems = relations.filter((e) => {
-    const t = e.tags ?? {};
-    return t.route === "bus" || t.public_transport === "route";
-});
-
-function pickName(tags = {}) {
-    return (
-        tags.name ??
-        (tags.ref ? `Ruta ${tags.ref}` : null) ??
-        tags["name:es"] ??
-        "Ruta sin nombre"
+    const id = String(
+        props.id ??
+        props.osm_id ??
+        props["@id"] ??
+        `stop-${idx}`
     );
-}
 
-// Construye el shape (lista de puntos) a partir de los ways de la relación
-function buildShapeForRelation(rel) {
-    const coords = [];
-    for (const m of rel.members ?? []) {
-        if (m.type !== "way") continue;
-        const way = wayMap.get(m.ref);
-        if (!way || !Array.isArray(way.nodes)) continue;
-
-        for (const nodeId of way.nodes) {
-            const n = nodeMap.get(nodeId);
-            if (!n) continue;
-            const lat = Number(n.lat);
-            const lng = Number(n.lon);
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-
-            if (coords.length) {
-                const last = coords[coords.length - 1];
-                if (
-                    Math.abs(last.lat - lat) < 1e-6 &&
-                    Math.abs(last.lng - lng) < 1e-6
-                ) {
-                    continue; // evitar duplicados seguidos
-                }
-            }
-            coords.push({ lat, lng });
-        }
-    }
-    return coords;
-}
-
-// Extrae paradas para la ruta a partir de miembros tipo node con tags de parada
-function extractStopsForRelation(rel) {
-    const routeStops = [];
-    for (const m of rel.members ?? []) {
-        if (m.type !== "node") continue;
-        const node = nodeMap.get(m.ref);
-        const tags = (node && node.tags) || m.tags || {};
-        const isStop =
-            tags.highway === "bus_stop" ||
-            tags.public_transport === "platform" ||
-            tags.public_transport === "stop_position";
-
-        if (!isStop) continue;
-
-        const lat = Number(node?.lat);
-        const lng = Number(node?.lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-
-        const name =
-            tags.name ?? tags["name:es"] ?? tags.ref ?? "Parada sin nombre";
-
-        routeStops.push({
-            id: String(node?.id ?? m.ref),
-            name,
-            lat,
-            lng,
-            isSafe: true,
-        });
-    }
-    return routeStops;
-}
-
-// ========= 5) ARMAR RUTAS =========
-const routes = routeElems.map((e, idx) => {
-    const tags = e.tags ?? {};
-    const name = pickName(tags);
-
-    const shape = buildShapeForRelation(e);
-    const stopsForRoute = extractStopsForRelation(e);
-    const mainStops = stopsForRoute.slice(0, 5).map((s) => s.name);
+    const name =
+        props.name ||
+        props.ref ||
+        props["name:es"] ||
+        "Parada";
 
     return {
-        id: String(e.id ?? `route_${idx + 1}`),
+        id,
         name,
-        description: tags.operator ?? null,
-        mainStops,
-        status: "ACTIVE",
-        estimatedTime: tags.duration ?? "—",
-        capacity: tags.capacity ?? "—",
-        isFavorite: false,
-        // campos que tu front ya espera
-        stops: stopsForRoute,
-        shape,
+        lat: Number(coords[1]),
+        lng: Number(coords[0]),
+        isSafe: true,
     };
 });
 
-// ========= 6) ESCRITURA =========
-await ensureDirFor(stopsOut);
-await ensureDirFor(routesOut);
+fs.mkdirSync(path.dirname(stopsOutput), { recursive: true });
+fs.writeFileSync(
+    stopsOutput,
+    JSON.stringify({ stops: stopsOut }, null, 2),
+    "utf8"
+);
+console.log("✅ Generado:", stopsOutput, `(${stopsOut.length} paradas)`);
 
-await fs.writeFile(stopsOut, JSON.stringify({ stops }, null, 2), "utf8");
-await fs.writeFile(routesOut, JSON.stringify({ routes }, null, 2), "utf8");
+// === 2) ROUTES: Overpass JSON -> rutas con shape ===
+const osm = JSON.parse(fs.readFileSync(routesInput, "utf8"));
+const elements = osm.elements || [];
+
+// indexar NODOS (aquí están los lat/lon de verdad)
+const nodesById = new Map();
+for (const el of elements) {
+    if (el.type === "node") {
+        nodesById.set(el.id, el); // tiene lat / lon
+    }
+}
+
+// indexar WAYS (lista de ids de nodos)
+const waysById = new Map();
+for (const el of elements) {
+    if (el.type === "way") {
+        waysById.set(el.id, el); // tiene nodes: [...]
+    }
+}
+
+// extraer solo las RELATIONS de bus
+const relations = elements.filter(
+    (el) => el.type === "relation" && el.tags?.route === "bus"
+);
+
+function buildShapeForRelation(rel) {
+    const pts = [];
+
+    for (const m of rel.members || []) {
+        if (m.type !== "way") continue;
+        const way = waysById.get(m.ref);
+        if (!way || !Array.isArray(way.nodes)) continue;
+
+        for (const nid of way.nodes) {
+            const node = nodesById.get(nid);
+            if (!node) continue;
+            if (
+                typeof node.lat === "number" &&
+                typeof node.lon === "number"
+            ) {
+                pts.push({ lat: node.lat, lng: node.lon });
+            }
+        }
+    }
+
+    return pts;
+}
+
+const routesOut = [];
+
+for (const rel of relations) {
+    const tags = rel.tags || {};
+    const ref = tags.ref || rel.id; // 101, 102, etc
+    const shape = buildShapeForRelation(rel);
+
+    if (!shape || shape.length < 2) {
+        console.warn(
+            `⚠️ Relation ${rel.id} (ref=${ref}) no tiene shape suficiente (${shape?.length || 0} puntos).`
+        );
+        continue;
+    }
+
+    const name =
+        tags.name ||
+        `Ruta ${ref}`;
+
+    const desc =
+        (tags.from && tags.to)
+            ? `${tags.from} → ${tags.to}`
+            : tags.operator || null;
+
+    routesOut.push({
+        id: `rt-${ref}`,
+        name,
+        description: desc,
+        mainStops: [], // luego puedes rellenar con paradas reales
+        status: "ACTIVE",
+        estimatedTime: "—",
+        capacity: "Bus estándar",
+        isFavorite: false,
+        shape,
+    });
+}
+
+fs.mkdirSync(path.dirname(routesOutput), { recursive: true });
+fs.writeFileSync(
+    routesOutput,
+    JSON.stringify({ routes: routesOut }, null, 2),
+    "utf8"
+);
 
 console.log(
-    `OK • Generados:\n  - ${path.resolve(stopsOut)}\n  - ${path.resolve(
-        routesOut
-    )}`
+    "✅ Generado:",
+    routesOutput,
+    `(${routesOut.length} rutas con shape)`
 );

@@ -2,7 +2,7 @@
   "stops": [
     {
       "id": "node/278360183",
-      "name": "Parada 1",
+      "name": "Parada",
       "lat": 23.0126744,
       "lng": -82.3001745,
       "isSafe": true
@@ -527,7 +527,7 @@
     },
     {
       "id": "node/2473714492",
-      "name": "Parada 76",
+      "name": "Parada",
       "lat": 11.9271274,
       "lng": -86.5055547,
       "isSafe": true
@@ -555,49 +555,49 @@
     },
     {
       "id": "node/2474745842",
-      "name": "Parada 80",
+      "name": "Parada",
       "lat": 12.037402,
       "lng": -86.5121809,
       "isSafe": true
     },
     {
       "id": "node/2474745942",
-      "name": "Parada 81",
+      "name": "Parada",
       "lat": 12.0658735,
       "lng": -86.4750124,
       "isSafe": true
     },
     {
       "id": "node/2474745943",
-      "name": "Parada 82",
+      "name": "Parada",
       "lat": 12.0681155,
       "lng": -86.4817665,
       "isSafe": true
     },
     {
       "id": "node/2474745948",
-      "name": "Parada 83",
+      "name": "Parada",
       "lat": 12.0727954,
       "lng": -86.4946723,
       "isSafe": true
     },
     {
       "id": "node/2474745949",
-      "name": "Parada 84",
+      "name": "Parada",
       "lat": 12.0729337,
       "lng": -86.4945011,
       "isSafe": true
     },
     {
       "id": "node/2474745960",
-      "name": "Parada 85",
+      "name": "Parada",
       "lat": 12.0826283,
       "lng": -86.385192,
       "isSafe": true
     },
     {
       "id": "node/2474745961",
-      "name": "Parada 86",
+      "name": "Parada",
       "lat": 12.0832628,
       "lng": -86.3811706,
       "isSafe": true
@@ -1213,7 +1213,7 @@
     },
     {
       "id": "node/2500129757",
-      "name": "Parada 174",
+      "name": "Parada",
       "lat": 12.126736,
       "lng": -86.2082489,
       "isSafe": true
@@ -1262,7 +1262,7 @@
     },
     {
       "id": "node/2500129790",
-      "name": "Parada 181",
+      "name": "Parada",
       "lat": 12.1267427,
       "lng": -86.2081626,
       "isSafe": true
@@ -1864,21 +1864,21 @@
     },
     {
       "id": "node/2778811321",
-      "name": "Parada 267",
+      "name": "Parada",
       "lat": 12.0222597,
       "lng": -86.2097255,
       "isSafe": true
     },
     {
       "id": "node/2778811338",
-      "name": "Parada 268",
+      "name": "Parada",
       "lat": 12.0238895,
       "lng": -86.2067859,
       "isSafe": true
     },
     {
       "id": "node/2778811425",
-      "name": "Parada 269",
+      "name": "Parada",
       "lat": 12.0459759,
       "lng": -86.2017957,
       "isSafe": true
@@ -2039,7 +2039,7 @@
     },
     {
       "id": "node/2926571943",
-      "name": "Parada 292",
+      "name": "Parada",
       "lat": 12.041985,
       "lng": -86.3109732,
       "isSafe": true
@@ -2088,7 +2088,7 @@
     },
     {
       "id": "node/3107755121",
-      "name": "Parada 299",
+      "name": "Parada",
       "lat": 12.0085808,
       "lng": -86.2159368,
       "isSafe": true
@@ -7191,7 +7191,7 @@
     },
     {
       "id": "node/3704028836",
-      "name": "Parada 1028",
+      "name": "Parada",
       "lat": 12.1091311,
       "lng": -86.2166114,
       "isSafe": true
@@ -7359,7 +7359,7 @@
     },
     {
       "id": "node/3705029097",
-      "name": "Parada 1052",
+      "name": "Parada",
       "lat": 12.1091322,
       "lng": -86.2166842,
       "isSafe": true
@@ -9081,14 +9081,14 @@
     },
     {
       "id": "node/3876874068",
-      "name": "Parada 1298",
+      "name": "Parada",
       "lat": 12.1716702,
       "lng": -86.358231,
       "isSafe": true
     },
     {
       "id": "node/3876874070",
-      "name": "Parada 1299",
+      "name": "Parada",
       "lat": 12.1716821,
       "lng": -86.3581013,
       "isSafe": true
@@ -9193,14 +9193,14 @@
     },
     {
       "id": "node/3949437332",
-      "name": "Parada 1314",
+      "name": "Parada",
       "lat": 12.3309804,
       "lng": -85.9551178,
       "isSafe": true
     },
     {
       "id": "node/3949437333",
-      "name": "Parada 1315",
+      "name": "Parada",
       "lat": 12.3315078,
       "lng": -85.9540518,
       "isSafe": true
@@ -10642,7 +10642,7 @@
     },
     {
       "id": "node/5417117104",
-      "name": "Parada 1521",
+      "name": "Parada",
       "lat": 12.2252823,
       "lng": -86.0953863,
       "isSafe": true
@@ -11027,7 +11027,7 @@
     },
     {
       "id": "node/6389933387",
-      "name": "Parada 1576",
+      "name": "Parada",
       "lat": 12.1066717,
       "lng": -86.3245673,
       "isSafe": true
@@ -11125,7 +11125,7 @@
     },
     {
       "id": "node/6831930206",
-      "name": "Parada 1590",
+      "name": "Parada",
       "lat": 12.1035597,
       "lng": -86.2503871,
       "isSafe": true
@@ -13134,7 +13134,7 @@
     },
     {
       "id": "node/8816012881",
-      "name": "Parada 1877",
+      "name": "Parada",
       "lat": 12.0448414,
       "lng": -86.344178,
       "isSafe": true
@@ -13372,7 +13372,7 @@
     },
     {
       "id": "node/9960381053",
-      "name": "Parada 1911",
+      "name": "Parada",
       "lat": 12.1532364,
       "lng": -86.1489114,
       "isSafe": true
@@ -13491,7 +13491,7 @@
     },
     {
       "id": "node/10186848717",
-      "name": "Parada 1928",
+      "name": "Parada",
       "lat": 22.9787631,
       "lng": -82.2658796,
       "isSafe": true
@@ -13540,7 +13540,7 @@
     },
     {
       "id": "node/10693301194",
-      "name": "Parada 1935",
+      "name": "Parada",
       "lat": 12.151258,
       "lng": -86.2759723,
       "isSafe": true
@@ -13575,77 +13575,77 @@
     },
     {
       "id": "node/10897771103",
-      "name": "Parada 1940",
+      "name": "Parada",
       "lat": 12.1382171,
       "lng": -86.2197671,
       "isSafe": true
     },
     {
       "id": "node/10976181327",
-      "name": "Parada 1941",
+      "name": "Parada",
       "lat": 12.1678621,
       "lng": -86.3457408,
       "isSafe": true
     },
     {
       "id": "node/10976181328",
-      "name": "Parada 1942",
+      "name": "Parada",
       "lat": 12.1678063,
       "lng": -86.3469278,
       "isSafe": true
     },
     {
       "id": "node/10976181329",
-      "name": "Parada 1943",
+      "name": "Parada",
       "lat": 12.1672667,
       "lng": -86.3480333,
       "isSafe": true
     },
     {
       "id": "node/10976181330",
-      "name": "Parada 1944",
+      "name": "Parada",
       "lat": 12.1670888,
       "lng": -86.3488013,
       "isSafe": true
     },
     {
       "id": "node/10976181331",
-      "name": "Parada 1945",
+      "name": "Parada",
       "lat": 12.1687022,
       "lng": -86.3496339,
       "isSafe": true
     },
     {
       "id": "node/10976181332",
-      "name": "Parada 1946",
+      "name": "Parada",
       "lat": 12.168812,
       "lng": -86.3523652,
       "isSafe": true
     },
     {
       "id": "node/10976181333",
-      "name": "Parada 1947",
+      "name": "Parada",
       "lat": 12.1697228,
       "lng": -86.3505285,
       "isSafe": true
     },
     {
       "id": "node/10976181334",
-      "name": "Parada 1948",
+      "name": "Parada",
       "lat": 12.1675466,
       "lng": -86.3548816,
       "isSafe": true
     },
     {
       "id": "node/10976181335",
-      "name": "Parada 1949",
+      "name": "Parada",
       "lat": 12.1681316,
       "lng": -86.3537021,
       "isSafe": true
     },
     {
       "id": "node/10976181336",
-      "name": "Parada 1950",
+      "name": "Parada",
       "lat": 12.1660564,
       "lng": -86.3578147,
       "isSafe": true
@@ -13750,42 +13750,42 @@
     },
     {
       "id": "node/13116983924",
-      "name": "Parada 1965",
+      "name": "Parada",
       "lat": 12.1232261,
       "lng": -86.3078143,
       "isSafe": true
     },
     {
       "id": "node/13116983925",
-      "name": "Parada 1966",
+      "name": "Parada",
       "lat": 12.123542,
       "lng": -86.306859,
       "isSafe": true
     },
     {
       "id": "node/13129240184",
-      "name": "Parada 1967",
+      "name": "Parada",
       "lat": 12.1249879,
       "lng": -86.3015408,
       "isSafe": true
     },
     {
       "id": "node/13129240185",
-      "name": "Parada 1968",
+      "name": "Parada",
       "lat": 12.1251986,
       "lng": -86.3003944,
       "isSafe": true
     },
     {
       "id": "node/13131219992",
-      "name": "Parada 1969",
+      "name": "Parada",
       "lat": 12.1258843,
       "lng": -86.2950743,
       "isSafe": true
     },
     {
       "id": "node/13131233934",
-      "name": "Parada 1970",
+      "name": "Parada",
       "lat": 12.126026,
       "lng": -86.2892498,
       "isSafe": true

@@ -1,341 +1,297 @@
-// src/components/dashboard-screen.tsx
-"use client";
+"use client"
 
-import { useState, useEffect, useMemo } from "react";
-import {
-  Home,
-  Route,
-  Ticket,
-  Bell,
-  User,
-  MapPin,
-  Clock,
-  Users,
-  QrCode,
-  Navigation,
-  LogOut,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { RoutesScreen } from "@/components/routes-screen";
-import { PassScreen } from "@/components/pass-screen";
-import { TripInProgressScreen } from "@/components/trip-in-progress-screen";
-import { NotificationsScreen } from "@/components/notifications-screen";
-import { ProfileScreen } from "@/components/profile-screen";
-import type { UserRole } from "@/types";
-import { MapWidget } from "@/components/map-widget";
-import { getUser, saveUser, clearToken, getToken } from "@/lib/session";
-import { getMe } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
+import { MapPin, ChevronDown, AlertTriangle } from "lucide-react"
+
+import { RoutesScreen } from "@/components/routes-screen"
+import { PassScreen } from "@/components/pass-screen"
+import { TripInProgressScreen } from "@/components/trip-in-progress-screen"
+import { NotificationsScreen } from "@/components/notifications-screen"
+import { ProfileScreen } from "@/components/profile-screen"
+import type { UserRole } from "@/types"
+import { getUser, saveUser, getToken } from "@/lib/session"
+import { getMe } from "@/lib/api"
+import { StudentBottomNav, type TabId } from "@/components/student-bottom-nav"
 
 type DashboardScreenProps = {
-  userRole: UserRole;
-};
+  userRole: UserRole
+}
 
-type NavItem = "home" | "routes" | "pass" | "notifications" | "profile";
+type NavItem = "home" | "routes" | "fares" | "pass" | "notifications" | "profile"
 
-type LatLng = { lat: number; lng: number };
-type MapStop = LatLng & { name?: string };
+function tabFromNav(nav: NavItem): TabId {
+  switch (nav) {
+    case "home":
+      return "home"
+    case "routes":
+      return "bus"
+    case "fares":
+      return "money"
+    case "pass":
+      return "ticket"
+    case "notifications":
+      return "bell"
+    case "profile":
+      return "user"
+  }
+}
+
+function navFromTab(tab: TabId): NavItem {
+  switch (tab) {
+    case "home":
+      return "home"
+    case "bus":
+      return "routes"
+    case "money":
+      return "fares"
+    case "ticket":
+      return "pass"
+    case "bell":
+      return "notifications"
+    case "user":
+      return "profile"
+  }
+}
 
 export function DashboardScreen({ userRole }: DashboardScreenProps) {
-  const [activeNav, setActiveNav] = useState<NavItem>("home");
-  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
-  const [tripInProgress, setTripInProgress] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [activeNav, setActiveNav] = useState<NavItem>("home")
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [tripInProgress, setTripInProgress] = useState<string | null>(null)
 
-  // ======== MAPA ========
-  const [mapStops, setMapStops] = useState<MapStop[]>([]);
-  const [mapBuses, setMapBuses] = useState<LatLng[]>([]);
-  const [path, setPath] = useState<LatLng[] | undefined>(undefined);
-  const [origin, setOrigin] = useState<LatLng | null>(null);
-  const [destination, setDestination] = useState<LatLng | null>(null);
+  // ======== SESIÓN / NOMBRE =========
+  const [user, setUser] = useState<any>(getUser())
 
-  // ======== SESIÓN ========
-  const [user, setUser] = useState<any>(getUser());
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
+    const token = getToken()
+    if (!token) return
+
     getMe(token)
       .then((res) => {
         if (res?.user) {
-          setUser(res.user);
-          saveUser(res.user);
+          setUser(res.user)
+          saveUser(res.user)
         }
       })
       .catch(() => {
-        // si falla, dejamos lo del localStorage
-      });
-  }, []);
+        // ignoramos error, usamos lo que haya en localStorage
+      })
+  }, [])
 
   const displayName = useMemo(() => {
-    const full = user?.student?.fullName || user?.student?.fullname;
-    if (full && typeof full === "string" && full.trim().length > 0) return full;
-    if (user?.email) return user.email;
-    return user?.role || userRole || "Usuario";
-  }, [user, userRole]);
+    const full = user?.student?.fullName || user?.student?.fullname
+    if (full && typeof full === "string" && full.trim().length > 0) return full
+    if (user?.email) return user.email
+    return user?.role || userRole || "Usuario"
+  }, [user, userRole])
 
-  // ======== GEO ========
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          }),
-        () => setUserLocation({ lat: 12.136389, lng: -86.251389 }) // Managua
-      );
-    }
-  }, []);
+  const firstName = useMemo(() => {
+    const parts = String(displayName).trim().split(" ")
+    return parts[0] || "viajar"
+  }, [displayName])
 
-  // 🔥 Buses “cerca de mí”
-  useEffect(() => {
-    if (!userLocation) {
-      setMapBuses([]);
-      return;
-    }
-
-    const base = userLocation;
-    setMapBuses([
-      { lat: base.lat + 0.001, lng: base.lng + 0.0015 },
-      { lat: base.lat - 0.0012, lng: base.lng - 0.0008 },
-      { lat: base.lat + 0.0005, lng: base.lng - 0.0012 },
-    ]);
-  }, [userLocation]);
-
-  const center = userLocation ?? { lat: 12.136389, lng: -86.251389 };
-
-  const handleReserveRoute = (routeName: string) => setTripInProgress(routeName);
-  const handleEndTrip = () => {
-    setTripInProgress(null);
-    setActiveNav("home");
-  };
-
-  // ======== PLANIFICACIÓN DESDE ROUTESCREEN ========
-  const handlePlannedTrip = (payload: {
-    routeId: string;
-    from: MapStop;
-    to: MapStop;
-    stopsToShow: MapStop[];
-    path: LatLng[];
-  }) => {
-    // stops que queremos pintar a lo largo de la ruta
-    setMapStops(payload.stopsToShow);
-
-    // origen / destino para los marcadores grandes
-    setOrigin({ lat: payload.from.lat, lng: payload.from.lng });
-    setDestination({ lat: payload.to.lat, lng: payload.to.lng });
-
-    // path completo (shape) que viene de la ruta, con fallback a recta
-    const pathFromPayload =
-      payload.path && payload.path.length >= 2
-        ? payload.path
-        : [
-          { lat: payload.from.lat, lng: payload.from.lng },
-          { lat: payload.to.lat, lng: payload.to.lng },
-        ];
-    setPath(pathFromPayload);
-
-    // buses ya no se generan desde la ruta, solo desde la ubicación
-    setActiveNav("home");
-  };
-
-  if (tripInProgress) {
-    return (
-      <TripInProgressScreen
-        routeName={tripInProgress}
-        onEndTrip={handleEndTrip}
-      />
-    );
+  const handleReserveRoute = (routeName: string) => {
+    setTripInProgress(routeName)
+    // nos vamos al tab de rutas (opcional)
+    setActiveNav("routes")
   }
 
+  const handleEndTrip = () => {
+    setTripInProgress(null)
+    setActiveNav("home")
+  }
+
+  // ======== CONTENIDOS POR TAB =========
   const renderContent = () => {
-    switch (activeNav) {
-      case "routes":
-        return (
+    // 🧡 si hay viaje en progreso, mostramos SIEMPRE esa pantalla
+    if (tripInProgress) {
+      return (
+        <TripInProgressScreen
+          routeName={tripInProgress}
+          onEndTrip={handleEndTrip}
+        />
+      )
+    }
+
+    if (activeNav === "routes") {
+      return (
+        <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent">
           <RoutesScreen
             onReserveRoute={handleReserveRoute}
-            onPlannedTrip={handlePlannedTrip}
+            onPlannedTrip={() => { }}
           />
-        );
-      case "pass":
-        return <PassScreen />;
-      case "notifications":
-        return <NotificationsScreen onUpdateUnreadCount={setUnreadCount} />;
-      case "profile":
-        return <ProfileScreen userRole={userRole} />;
-      case "home":
-      default:
-        return (
-          <div className="flex-1 relative">
-            {/* HEADER */}
-            <div className="flex items-center justify-between p-4">
-              <div className="space-y-0.5">
-                <p className="text-xs text-muted-foreground">Bienvenido</p>
-                <h2 className="text-lg font-semibold">{displayName}</h2>
+        </div>
+      )
+    }
+
+    if (activeNav === "fares") {
+      return (
+        <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent flex flex-col items-center justify-center px-6 text-center">
+          <h2 className="text-xl font-semibold mb-2 text-white">
+            Tarifas
+          </h2>
+          <p className="text-sm text-white/80">
+            Próximamente podrás ver el detalle de las tarifas aquí.
+          </p>
+        </div>
+      )
+    }
+
+    if (activeNav === "pass") {
+      return (
+        <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent">
+          <PassScreen />
+        </div>
+      )
+    }
+
+    if (activeNav === "notifications") {
+      return (
+        <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent">
+          <NotificationsScreen onUpdateUnreadCount={setUnreadCount} />
+        </div>
+      )
+    }
+
+    if (activeNav === "profile") {
+      return (
+        <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent">
+          <ProfileScreen userRole={userRole} />
+        </div>
+      )
+    }
+
+    // ======== HOME (diseño Figma estático) =========
+    return (
+      <div className="relative z-10 min-h-[calc(100vh-80px)] flex flex-col px-5 pt-8 pb-4">
+        <div className="bg-white rounded-[32px] shadow-[0_20px_45px_rgba(0,0,0,0.28)] px-5 pt-5 pb-7 space-y-5">
+          {/* Fila superior: ubicación + SOS */}
+          <div className="flex items-center justify-between">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white shadow-sm border border-slate-100">
+              <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center">
+                <MapPin className="w-3 h-3 text-white" />
               </div>
-              <Button
-                variant="outline"
-                className="rounded-xl gap-2"
-                onClick={() => {
-                  clearToken();
-                  location.reload();
-                }}
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
+              <span className="text-sm font-medium text-slate-800">
+                Bolonia
+              </span>
+              <ChevronDown className="w-4 h-4 text-slate-500" />
+            </button>
 
-            {/* MAPA */}
-            <div className="absolute inset-0">
-              <MapWidget
-                center={center}
-                zoom={13}
-                buses={mapBuses}
-                stops={[]} // vacío para no llenar de puntos naranjas
-                path={path}
-                origin={origin}
-                destination={destination}
-                stopsOnPath={mapStops}
-                style={{ width: "100%", height: "100%" }}
+            <button className="px-4 py-1.5 rounded-full bg-[#FFC933] text-xs font-semibold text-slate-900 shadow-sm flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              SOS
+            </button>
+          </div>
+
+          {/* HERO */}
+          <div className="rounded-[26px] overflow-hidden shadow-md">
+            <div className="relative w-full h-44">
+              <Image
+                src="/assets/dashboard-hero.jpg"
+                alt="¿Dónde tienes que ir?"
+                fill
+                className="object-cover"
+                priority
               />
-            </div>
-
-            {/* CARD INFERIOR */}
-            <div className="absolute bottom-20 left-0 right-0 p-4">
-              <Card className="bg-card/95 backdrop-blur-lg border-2 rounded-3xl shadow-2xl p-5 space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <MapPin className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Parada favorita
-                        </p>
-                        <p className="font-semibold text-foreground">
-                          Campus Central
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="rounded-full">
-                      <Clock className="w-3 h-3 mr-1" />
-                      5 min
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                        <Navigation className="w-5 h-5 text-accent" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Parada más cercana
-                        </p>
-                        <p className="font-semibold text-foreground">
-                          Av. Principal
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="rounded-full">
-                        <Users className="w-3 h-3 mr-1" />
-                        12/40
-                      </Badge>
-                      <Badge variant="secondary" className="rounded-full">
-                        <Clock className="w-3 h-3 mr-1" />
-                        2 min
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  size="lg"
-                  className="w-full h-14 rounded-2xl text-lg font-semibold bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
-                  onClick={() => setActiveNav("pass")}
-                >
-                  <QrCode className="w-6 h-6" />
-                  Pase listo para abordar
-                </Button>
-              </Card>
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute inset-0 flex items-end justify-center pb-5 px-4">
+                <p className="text-white text-lg font-semibold text-center drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
+                  {`¿Dónde tienes que ir, ${firstName}?`}
+                </p>
+              </div>
             </div>
           </div>
-        );
-    }
-  };
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {renderContent()}
-      <nav className="bg-card border-t border-border px-2 py-3 safe-area-bottom">
-        <div className="flex items-center justify-around max-w-md mx-auto">
-          <button
-            onClick={() => setActiveNav("home")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "home"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground"
-              }`}
-          >
-            <Home className="w-6 h-6" />
-            <span className="text-xs font-medium">Inicio</span>
-          </button>
+          {/* BUSCADOR */}
+          <div className="mt-1">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Busca un bus en específico"
+                className="w-full h-12 rounded-full bg-[#f5f6fb] pl-5 pr-12 text-sm border border-transparent focus:border-[#C3C8F5] focus:outline-none focus:ring-2 focus:ring-[#C3C8F5]/60"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br from-[#C8C3F8] via-[#E1C7F8] to-[#F4D0F8] flex items-center justify-center shadow-md">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 text-[#5A4EA3]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={() => setActiveNav("routes")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "routes"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground"
-              }`}
-          >
-            <Route className="w-6 h-6" />
-            <span className="text-xs font-medium">Rutas</span>
-          </button>
+          {/* PARADAS CERCANAS */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Paradas cercanas
+            </h2>
 
-          <button
-            onClick={() => setActiveNav("pass")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "pass"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground"
-              }`}
-          >
-            <Ticket className="w-6 h-6" />
-            <span className="text-xs font-medium">Pase</span>
-          </button>
-
-          <button
-            onClick={() => setActiveNav("notifications")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors relative ${activeNav === "notifications"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground"
-              }`}
-          >
-            <Bell className="w-6 h-6" />
-            <span className="text-xs font-medium">Avisos</span>
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-2 min-w-[18px] h-[18px] bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveNav("profile")}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-colors ${activeNav === "profile"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground"
-              }`}
-          >
-            <User className="w-6 h-6" />
-            <span className="text-xs font-medium">Perfil</span>
-          </button>
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="min-w-[120px] max-w-[130px] bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden"
+                >
+                  <div className="relative w-full h-20">
+                    <Image
+                      src="/assets/dashboard-hero.jpg"
+                      alt={`Parada ${n}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="px-3 py-2 space-y-1">
+                    <p className="text-xs font-semibold text-slate-900">
+                      {`Parada ${n}`}
+                    </p>
+                    <button className="w-full h-7 rounded-full bg-slate-900 text-[11px] font-medium text-white">
+                      Ver
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </nav>
+      </div>
+    )
+  }
+
+  // ======== LAYOUT GENERAL + NAVBAR FIJA =========
+  return (
+    <div className="min-h-screen bg-background flex justify-center">
+      <div className="relative w-full max-w-md min-h-screen bg-slate-900 overflow-hidden">
+        {/* Fondo general */}
+        <Image
+          src="/assets/bg-dashboard.jpg"
+          alt="Fondo Trayex"
+          fill
+          priority
+          className="object-cover"
+        />
+
+        {/* Contenido (dejamos espacio para la navbar) */}
+        <div className="relative z-10 pb-24">{renderContent()}</div>
+
+        {/* Navbar siempre visible */}
+        <StudentBottomNav
+          active={tabFromNav(activeNav)}
+          onChange={(tab) => {
+            const newNav = navFromTab(tab)
+            setTripInProgress(null) // por si quieres salir del estado viaje al tocar otra pestaña
+            setActiveNav(newNav)
+          }}
+        />
+      </div>
     </div>
-  );
+  )
 }

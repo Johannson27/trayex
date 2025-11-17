@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Bus, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import type { Screen, UserRole } from "@/app/app/page"
 
 interface WelcomeScreenProps {
@@ -11,11 +12,9 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
   const [showRoleSelection, setShowRoleSelection] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
 
   const handleCreateAccount = () => {
     setShowRoleSelection(true)
-    setIsAnimating(true)
   }
 
   const handleRoleSelect = (role: UserRole) => {
@@ -27,97 +26,128 @@ export function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
   }
 
   return (
-    <div className="relative h-screen w-full flex flex-col items-center justify-between p-6 overflow-hidden">
-      {/* Logo Circle */}
-      <div
-        className={`absolute top-1/4 flex items-center justify-center transition-all duration-500 ${
-          isAnimating ? "top-8 left-8 scale-75" : ""
-        }`}
-      >
-        <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center shadow-2xl">
-          <Bus className="w-16 h-16 text-primary-foreground" />
-        </div>
-      </div>
+    <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
+      {/* Fondo a pantalla completa */}
+      <Image
+        src="/assets/bg-register-student.jpg"
+        alt="Fondo bienvenida Trayex"
+        fill
+        priority
+        className="object-cover"
+      />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 mt-32">
-        <h1 className="text-5xl font-bold text-primary tracking-tight">Trayex</h1>
-        <p className="text-lg text-muted-foreground max-w-xs text-balance">
-          {"Transporte universitario seguro y confiable"}
-        </p>
-      </div>
+      {/* Capa de contenido */}
+      <div className="relative z-10 min-h-screen flex flex-col px-6 pt-20 pb-10 max-w-md mx-auto">
+        {/* Logo + tagline (lo bajamos un poco con pt-20 y gap) */}
+        <header className="flex flex-col items-center gap-3">
+          <Image
+            src="/assets/logo-trayex.svg"
+            alt="Trayex"
+            width={220}
+            height={80}
+            className="drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]"
+          />
+          <p className="text-[13px] text-white/90 tracking-[0.12em]">
+            Trayectoria y Exactitud
+          </p>
+        </header>
 
-      {/* Bottom Card */}
-      <div
-        className={`w-full bg-primary rounded-t-3xl p-8 space-y-4 transition-all duration-500 ${
-          showRoleSelection ? "h-[60vh]" : "h-auto"
-        }`}
-      >
-        {!showRoleSelection ? (
-          <>
-            <Button
-              size="lg"
-              className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-semibold text-lg h-14 rounded-2xl"
-              onClick={() => onNavigate("login", null)}
-            >
-              Iniciar sesión
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 font-semibold text-lg h-14 rounded-2xl bg-transparent"
-              onClick={handleCreateAccount}
-            >
-              Crear una cuenta
-            </Button>
-          </>
-        ) : (
-          <div className="space-y-6 animate-slide-up">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-primary-foreground">{"¿Quién eres?"}</h2>
-              <p className="text-primary-foreground/80">Selecciona tu tipo de cuenta</p>
-            </div>
+        {/* Spacer para empujar la tarjeta hacia abajo */}
+        <div className="flex-1" />
 
-            <div className="space-y-4">
-              <button
-                onClick={() => handleRoleSelect("student")}
-                className="w-full bg-primary-foreground text-primary p-6 rounded-2xl hover:scale-[1.02] transition-transform shadow-lg"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <h3 className="text-xl font-bold">👨‍🎓 Estudiante</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Reserva y viaja de forma segura</p>
-                  </div>
-                  <ArrowRight className="w-6 h-6" />
+        {/* Tarjeta inferior */}
+        <section className="mb-4">
+          <div className="bg-white/95 rounded-[32px] px-6 py-6 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+            {!showRoleSelection ? (
+              <div className="space-y-4">
+                {/* Iniciar Sesión */}
+                <Button
+                  size="lg"
+                  className="w-full h-12 text-[14px] font-semibold rounded-full border-none text-white shadow-[0_14px_30px_rgba(0,0,0,0.35)] transition-all duration-200 hover:brightness-110 hover:translate-y-[1px] active:translate-y-[2px]"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #FFC933 0%, #F6A33A 50%, #F27C3A 100%)",
+                  }}
+                  onClick={() => onNavigate("login", null)}
+                >
+                  Iniciar Sesion
+                </Button>
+
+                {/* Registrarse */}
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full h-12 text-[14px] font-semibold rounded-full border-0 bg-white text-[#555] shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:bg-neutral-50 hover:translate-y-[1px] active:translate-y-[2px] transition-all duration-200"
+                  onClick={handleCreateAccount}
+                >
+                  Registrarse
+                </Button>
+
+                <p className="pt-2 text-center text-[11px] text-neutral-400">
+                  ¿Necesitas ayuda?
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="text-center space-y-1">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    ¿Quién eres?
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    Selecciona tu tipo de cuenta
+                  </p>
                 </div>
-              </button>
 
-              <button
-                onClick={() => handleRoleSelect("driver")}
-                className="w-full bg-primary-foreground text-primary p-6 rounded-2xl hover:scale-[1.02] transition-transform shadow-lg"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <h3 className="text-xl font-bold">🚍 Conductor</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Opera rutas y valida accesos</p>
-                  </div>
-                  <ArrowRight className="w-6 h-6" />
+                <div className="space-y-3">
+                  {/* Estudiante */}
+                  <button
+                    onClick={() => handleRoleSelect("student")}
+                    className="w-full bg-slate-900 text-white px-5 py-4 rounded-2xl shadow-[0_14px_30px_rgba(0,0,0,0.35)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_18px_40px_rgba(0,0,0,0.45)] active:scale-[0.99]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-left">
+                        <h3 className="text-[15px] font-semibold">
+                          👨‍🎓 Estudiante
+                        </h3>
+                        <p className="text-[12px] text-slate-300 mt-1">
+                          Reserva y viaja de forma segura
+                        </p>
+                      </div>
+                      <ArrowRight className="w-5 h-5" />
+                    </div>
+                  </button>
+
+                  {/* Conductor */}
+                  <button
+                    onClick={() => handleRoleSelect("driver")}
+                    className="w-full bg-white text-slate-900 px-5 py-4 rounded-2xl border border-slate-200 shadow-[0_14px_30px_rgba(0,0,0,0.28)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_18px_40px_rgba(0,0,0,0.4)] active:scale-[0.99]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-left">
+                        <h3 className="text-[15px] font-semibold">
+                          🚍 Conductor
+                        </h3>
+                        <p className="text-[12px] text-slate-500 mt-1">
+                          Opera rutas y valida accesos
+                        </p>
+                      </div>
+                      <ArrowRight className="w-5 h-5" />
+                    </div>
+                  </button>
                 </div>
-              </button>
-            </div>
 
-            <Button
-              variant="ghost"
-              className="w-full text-primary-foreground hover:bg-primary-foreground/10"
-              onClick={() => {
-                setShowRoleSelection(false)
-                setIsAnimating(false)
-              }}
-            >
-              Volver
-            </Button>
+                {/* Volver */}
+                <Button
+                  variant="ghost"
+                  className="w-full h-10 text-xs text-slate-500 rounded-full hover:bg-slate-100/70 transition-colors duration-200"
+                  onClick={() => setShowRoleSelection(false)}
+                >
+                  Volver
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </section>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +53,8 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
 
     const emailTrim = email.trim();
     if (!emailTrim) return setErr("Ingresa tu email");
-    if (password.length < 8) return setErr("La contraseña debe tener al menos 8 caracteres");
+    if (password.length < 8)
+      return setErr("La contraseña debe tener al menos 8 caracteres");
 
     setLoading(true);
     try {
@@ -60,7 +62,7 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
       saveToken(token);
 
       try {
-        const me = await getMe(); // ✅ ya no pasa token
+        const me = await getMe();
         saveUser(me?.user ?? user ?? {});
       } catch {
         saveUser(user ?? {});
@@ -73,7 +75,8 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
       else router.replace("/dashboard");
     } catch (e: any) {
       const msg = e?.message ?? "Error al iniciar sesión";
-      if (msg.toLowerCase().includes("credenciales")) setErr("Email o contraseña incorrecta");
+      if (msg.toLowerCase().includes("credenciales"))
+        setErr("Email o contraseña incorrecta");
       else setErr(msg);
     } finally {
       setLoading(false);
@@ -81,88 +84,152 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="bg-primary p-6 pb-12 rounded-b-3xl shadow-lg">
-        <button onClick={onBack} className="flex items-center gap-2 text-primary-foreground mb-8" type="button">
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Volver</span>
-        </button>
+    <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
+      {/* Fondo a pantalla completa (puedes cambiar a otro bg si luego exportas uno específico) */}
+      <Image
+        src="/assets/bg-register-student.jpg"
+        alt="Fondo login Trayex"
+        fill
+        priority
+        className="object-cover"
+      />
 
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-            <Bus className="w-6 h-6 text-primary-foreground" />
+      {/* Capa oscurecedora suave por si la foto está muy viva */}
+      <div className="absolute inset-0 bg-[#020617]/40" />
+
+      {/* Contenido */}
+      <div className="relative z-10 min-h-screen flex flex-col px-6 pt-10 pb-8 max-w-md mx-auto">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-6">
+          <button
+            onClick={onBack}
+            type="button"
+            className="flex items-center gap-2 text-white/90 text-sm hover:text-white transition-colors"
+          >
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/20 border border-white/30">
+              <ArrowLeft className="w-4 h-4" />
+            </span>
+            <span className="font-medium">Volver</span>
+          </button>
+
+          <div className="flex items-center gap-2 text-white/80 text-xs">
+            <Bus className="w-4 h-4" />
+            <span>Iniciar sesión</span>
           </div>
-          <h1 className="text-3xl font-bold text-primary-foreground">Iniciar sesión</h1>
+        </header>
+
+        {/* Título */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-semibold text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]">
+            ¡Bienvenido de vuelta!
+          </h1>
+          <p className="mt-1 text-sm text-white/85">{subtitle}</p>
         </div>
-        <p className="text-primary-foreground/80 ml-15">{subtitle}</p>
-      </div>
 
-      {/* Form */}
-      <div className="flex-1 p-6 -mt-6">
-        <div className="bg-card rounded-3xl shadow-xl p-6 space-y-6">
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                {userRole === "student" ? "Correo institucional o número de estudiante" : "Correo o teléfono"}
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="text"
-                  placeholder={userRole === "student" ? "estudiante@universidad.edu" : "correo@ejemplo.com"}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-11 h-14 rounded-2xl border-2 focus:border-primary"
-                  autoComplete="email"
-                />
+        {/* Tarjeta del formulario */}
+        <div className="mt-2 flex-1">
+          <div className="bg-white/95 rounded-[24px] px-5 py-6 shadow-[0_18px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-800">
+                  {userRole === "student"
+                    ? "Correo institucional o número de estudiante"
+                    : "Correo o teléfono"}
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="text"
+                    placeholder={
+                      userRole === "student"
+                        ? "estudiante@universidad.edu"
+                        : "correo@ejemplo.com"
+                    }
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-11 h-12 rounded-2xl border border-slate-200 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A] text-sm"
+                    autoComplete="email"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-11 h-14 rounded-2xl border-2 focus:border-primary"
-                  autoComplete="current-password"
-                  minLength={8}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-800">
+                  Contraseña
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-11 h-12 rounded-2xl border border-slate-200 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A] text-sm"
+                    autoComplete="current-password"
+                    minLength={8}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                />
-                <Label htmlFor="remember" className="text-sm cursor-pointer">Recordar correo</Label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) =>
+                      setRememberMe(checked as boolean)
+                    }
+                  />
+                  <Label
+                    htmlFor="remember"
+                    className="text-sm cursor-pointer text-slate-700"
+                  >
+                    Recordar correo
+                  </Label>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs text-[#F27C3A] font-medium hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
               </div>
-              <button type="button" className="text-sm text-primary font-medium hover:underline">
-                ¿Olvidaste tu contraseña?
-              </button>
-            </div>
 
-            {err && <div className="text-sm text-red-600 bg-red-100/60 rounded-lg p-2">{err}</div>}
+              {err && (
+                <div className="text-sm text-red-600 bg-red-100/70 rounded-lg p-2">
+                  {err}
+                </div>
+              )}
 
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full h-14 rounded-2xl text-lg font-semibold bg-primary hover:bg-primary/90"
-              disabled={loading}
-            >
-              {loading ? "Ingresando..." : "Iniciar sesión"}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full h-11 rounded-full text-sm font-semibold shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-all duration-200 hover:brightness-110 hover:translate-y-[1px] active:translate-y-[2px]"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #FFC933 0%, #F6A33A 50%, #F27C3A 100%)",
+                }}
+                disabled={loading}
+              >
+                {loading ? "Ingresando..." : "Iniciar sesión"}
+              </Button>
+            </form>
+          </div>
         </div>
+
+        {/* Pie */}
+        <footer className="mt-4 text-center text-[12px] text-white/85">
+          ¿Aún no tienes cuenta?{" "}
+          <button
+            type="button"
+            className="underline underline-offset-2 font-semibold"
+            onClick={onBack}
+          >
+            Crear una cuenta
+          </button>
+        </footer>
       </div>
     </div>
   );

@@ -1,15 +1,8 @@
+// src/components/routes-screen.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Bus, MapPin, Clock, Heart, ChevronRight, Filter, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { listZones, listStops, listTimeslots } from "@/lib/api";
-import { getToken } from "@/lib/session";
-import { dsFetchRoutes, dsFetchStops } from "@/lib/dataSource";
-
-type Status = "ACTIVE" | "SAFE" | "INCIDENT";
+import Image from "next/image";
+import { MapPin, Search } from "lucide-react";
 
 export type StopRow = {
   id: string;
@@ -24,12 +17,10 @@ export type RouteRow = {
   name: string;
   description: string | null;
   mainStops: string[];
-  status: Status;
+  status: "ACTIVE" | "SAFE" | "INCIDENT";
   estimatedTime: string;
   capacity: string;
   isFavorite: boolean;
-
-  // mismos campos opcionales que en lib/dataSource.ts
   stops?: StopRow[];
   shape?: { lat: number; lng: number }[];
 };
@@ -45,694 +36,137 @@ interface RoutesScreenProps {
   }) => void;
 }
 
-const PAGE_SIZE = 12;
-
+/**
+ * Diseño nuevo de "Rutas":
+ * - Zona superior: mapa (luego reemplazas el placeholder con Google Maps).
+ * - Barra de búsqueda flotando arriba.
+ * - Tarjeta de "Mi parada: Central" con foto y datos.
+ * - Botón que dispara onReserveRoute("Ruta 117") para ir al Estado de viaje.
+ */
 export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProps) {
-  const token = getToken();
+  const handleSelectStop = () => {
+    // 👉 Esto dispara tu TripInProgressScreen (Estado del viaje)
+    onReserveRoute?.("Ruta 117");
 
-  const [routes, setRoutes] = useState<RouteRow[]>([]);
-  const [allStops, setAllStops] = useState<StopRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  // Filtros UI
-  const [search, setSearch] = useState("");
-  const [showAll, setShowAll] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Modal reserva clásica
-  const [showReserveModal, setShowReserveModal] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<RouteRow | null>(null);
-  const [zones, setZones] = useState<Array<{ id: string; name: string }>>([]);
-  const [zoneId, setZoneId] = useState<string>("");
-  const [stops, setStops] = useState<Array<{ id: string; name: string }>>([]);
-  const [timeslots, setTimeslots] = useState<
-    Array<{ id: string; startAt: string; endAt: string }>
-  >([]);
-  const [stopId, setStopId] = useState<string>("");
-  const [timeslotId, setTimeslotId] = useState<string>("");
-  const [creating, setCreating] = useState(false);
-
-  // Modal PLAN (O/D sobre OSM)
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [planRoute, setPlanRoute] = useState<RouteRow | null>(null);
-  const [fromQuery, setFromQuery] = useState("");
-  const [toQuery, setToQuery] = useState("");
-  const [fromStop, setFromStop] = useState<StopRow | null>(null);
-  const [toStop, setToStop] = useState<StopRow | null>(null);
-
-  // 🌎 ubicación del usuario para "Usar mi ubicación"
-  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setErr(null);
-      try {
-        const [rts, stps] = await Promise.all([dsFetchRoutes(), dsFetchStops()]);
-        setRoutes(rts || []);
-        setAllStops(stps || []);
-      } catch (e: any) {
-        setErr(e?.message ?? "No se pudieron cargar las rutas");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  // pedir geolocalización una vez
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setUserLoc(null),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  }, []);
-
-  const toggleFavorite = (routeId: string) => {
-    setRoutes((rs) =>
-      rs.map((r) => (r.id === routeId ? { ...r, isFavorite: !r.isFavorite } : r))
-    );
-  };
-
-  // helper: paradas disponibles para una ruta
-  const useRouteStops = (route: RouteRow | null): StopRow[] | null => {
-    if (route && route.stops && route.stops.length) {
-      return route.stops;
-    }
-    return null; // null = no hay datos específicos de esa ruta
-  };
-
-  // 🔎 filtro rutas: por nombre y por paradas
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return routes;
-
-    return routes.filter((r) => {
-      if (r.name.toLowerCase().includes(q)) return true;
-      if (r.description?.toLowerCase().includes(q)) return true;
-
-      // Paradas principales
-      if (r.mainStops.some((s) => s.toLowerCase().includes(q))) return true;
-
-      // Paradas detalladas de la ruta (si existen)
-      if (r.stops && r.stops.length) {
-        if (r.stops.some((st) => st.name.toLowerCase().includes(q))) {
-          return true;
-        }
-      }
-
-      return false;
-    });
-  }, [routes, search]);
-
-  const shown = useMemo(
-    () => (showAll ? filtered : filtered.slice(0, PAGE_SIZE)),
-    [filtered, showAll]
-  );
-
-  // reserva clásica
-  const openReserveModal = async (route: RouteRow) => {
-    if (route.status === "INCIDENT") return;
-    if (!token) return alert("Inicia sesión para reservar.");
-
-    setSelectedRoute(route);
-    setShowReserveModal(true);
-
-    try {
-      const { zones } = await listZones();
-      setZones(zones);
-      const defaultZone = zones[0]?.id || "";
-      setZoneId(defaultZone);
-
-      if (defaultZone) {
-        const [{ stops }, { timeslots }] = await Promise.all([
-          listStops(defaultZone),
-          listTimeslots(defaultZone),
-        ]);
-        setStops(stops.map((s) => ({ id: s.id, name: s.name })));
-        setTimeslots(
-          timeslots.map((t) => ({ id: t.id, startAt: t.startAt, endAt: t.endAt }))
-        );
-        setStopId(stops[0]?.id || "");
-        setTimeslotId(timeslots[0]?.id || "");
-      }
-    } catch (e: any) {
-      setErr(e?.message ?? "No se pudo preparar la reserva");
-    }
-  };
-
-  // plan O/D
-  const openPlanModal = (route: RouteRow) => {
-    setPlanRoute(route);
-    setFromQuery("");
-    setToQuery("");
-    setFromStop(null);
-    setToStop(null);
-    setShowPlanModal(true);
-  };
-
-  // sugerencias de paradas por texto (según ruta cuando se pueda)
-  const suggestStops = (q: string, forRoute: RouteRow | null) => {
-    const s = q.trim().toLowerCase();
-    if (!s) {
-      return {
-        suggestions: [] as StopRow[],
-        hasGlobalMatch: false,
-        usingRouteStops: false,
-      };
-    }
-
-    const routeStops = useRouteStops(forRoute);
-    const pool = routeStops ?? allStops;
-
-    const suggestions = pool
-      .filter((st) => st.name.toLowerCase().includes(s))
-      .slice(0, 8);
-
-    const hasGlobalMatch = allStops.some((st) =>
-      st.name.toLowerCase().includes(s)
-    );
-
-    return {
-      suggestions,
-      hasGlobalMatch,
-      usingRouteStops: !!routeStops,
-    };
-  };
-
-  // parada más cercana a una ubicación
-  function nearestStop(stops: StopRow[], loc: { lat: number; lng: number }): StopRow | null {
-    if (!stops.length) return null;
-    let best = stops[0];
-    let bestD = Infinity;
-    for (const s of stops) {
-      const dx = s.lat - loc.lat;
-      const dy = s.lng - loc.lng;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bestD) {
-        bestD = d2;
-        best = s;
-      }
-    }
-    return best || null;
-  }
-
-  // corta el tramo A→B usando el orden de paradas de la ruta
-  const slicePath = (route: RouteRow, fromId: string, toId: string) => {
-    const arr = route.stops ?? [];
-    if (!arr.length) return null;
-
-    const a = arr.findIndex((x) => x.id === fromId);
-    const b = arr.findIndex((x) => x.id === toId);
-
-    if (a === -1 || b === -1) return null;
-    if (a >= b) return null; // asumimos sentido A→B
-
-    return arr.slice(a, b + 1).map((s) => ({
-      lat: s.lat,
-      lng: s.lng,
-    }));
-  };
-
-  // corta el shape completo de la ruta entre las paradas de origen y destino
-  function cutShapeByStops(
-    shape: { lat: number; lng: number }[],
-    from: { lat: number; lng: number },
-    to: { lat: number; lng: number }
-  ) {
-    if (!Array.isArray(shape) || shape.length < 2) return null;
-
-    const nearestIndex = (target: { lat: number; lng: number }) => {
-      let best = 0;
-      let bestD = Infinity;
-      shape.forEach((p, i) => {
-        const dx = p.lat - target.lat;
-        const dy = p.lng - target.lng;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < bestD) {
-          bestD = d2;
-          best = i;
-        }
-      });
-      return best;
-    };
-
-    const iA = nearestIndex(from);
-    const iB = nearestIndex(to);
-
-    if (iA === iB) return null;
-
-    if (iA < iB) {
-      return shape.slice(iA, iB + 1);
-    }
-
-    return [...shape.slice(iB, iA + 1)].reverse();
-  }
-
-  const MIN_SHAPE_POINTS = 3;
-
-  const confirmPlan = () => {
-    if (!planRoute || !fromStop || !toStop) {
-      console.log("❌ No hay planRoute, fromStop o toStop");
-      return;
-    }
-
-    console.log("📌 planRoute.id:", planRoute.id);
-    console.log("📌 planRoute.shape:", planRoute.shape);
-
-    // 👇 importante: inicializado en []
-    let path: { lat: number; lng: number }[] = [];
-
-    // 1️⃣ — Usar shape REAL, recortado entre las paradas si hay shape
-    if (
-      planRoute.shape &&
-      Array.isArray(planRoute.shape) &&
-      planRoute.shape.length >= MIN_SHAPE_POINTS
-    ) {
-      const cut = cutShapeByStops(planRoute.shape, fromStop, toStop);
-
-      if (cut && cut.length >= 2) {
-        console.log("🟢 USANDO SHAPE CORTADO — puntos:", cut.length);
-        path = cut;
-      } else {
-        console.log("🟢 USANDO SHAPE COMPLETO — puntos:", planRoute.shape.length);
-        path = planRoute.shape;
-      }
-
-    } else {
-      // 2️⃣ — Intentar cortar tramo usando el orden de paradas
-      const sliced = slicePath(planRoute, fromStop.id, toStop.id);
-
-      console.log("🟡 slicePath() retornó:", sliced ? sliced.length : "null");
-
-      if (sliced && sliced.length > 1) {
-        console.log("🟡 USANDO slicePath — puntos:", sliced.length);
-        path = sliced;
-
-      } else {
-        // 3️⃣ — Fallback: NO dibujar recta, dejamos path vacío
-        console.log("🔴 SIN SHAPE NI STOPS ORDENADOS → dejar path vacío y usar Directions");
-        path = []; // 👈 aquí está la diferencia gorda
-      }
-    }
-
-    // Paradas a mostrar en el resumen / mapa
-    const stopsToShow = [
-      {
-        lat: fromStop.lat,
-        lng: fromStop.lng,
-        name: fromStop.name,
-      },
-      {
-        lat: toStop.lat,
-        lng: toStop.lng,
-        name: toStop.name,
-      },
-    ];
-    function downsamplePath(
-      pts: { lat: number; lng: number }[],
-      step: number
-    ) {
-      if (pts.length <= step) return pts;
-      const out = [];
-      for (let i = 0; i < pts.length; i += step) {
-        out.push(pts[i]);
-      }
-      // asegúrate de incluir el último
-      if (pts[pts.length - 1] !== out[out.length - 1]) {
-        out.push(pts[pts.length - 1]);
-      }
-      return out;
-    }
-
-    let finalPath = path;
-    if (path.length > 1000) {
-      finalPath = downsamplePath(path, 3); // cada 3 puntos, por ejemplo
-    }
-
-    console.log("🧭 Path final enviado a DashboardScreen:", path.length, "puntos");
-    console.log("🚌 Paradas finales en stopsToShow:", stopsToShow.length);
-
+    // 👉 Si quieres que también pinte algo en el mapa del dashboard,
+    // mandamos un payload de ejemplo a onPlannedTrip
     onPlannedTrip?.({
-      routeId: planRoute.id,
+      routeId: "ruta-117",
       from: {
-        lat: fromStop.lat,
-        lng: fromStop.lng,
-        name: `Origen: ${fromStop.name}`,
+        lat: 12.1365,
+        lng: -86.2515,
+        name: "Mi parada: Central",
       },
       to: {
-        lat: toStop.lat,
-        lng: toStop.lng,
-        name: `Destino: ${toStop.name}`,
+        lat: 12.1405,
+        lng: -86.255,
+        name: "Destino de ejemplo",
       },
-      stopsToShow,
-      path, // puede ir vacío, y el MapWidget se encargará con Directions
+      stopsToShow: [],
+      path: [],
     });
-
-    setShowPlanModal(false);
   };
 
-
-  // === UI ===
   return (
-    <div className="flex-1 overflow-y-auto bg-background pb-20">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Rutas</h1>
-            <p className="text-sm text-muted-foreground">
-              {loading ? "Cargando..." : `Mostrando ${shown.length} de ${filtered.length}`}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full bg-transparent"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="w-5 h-5" />
-          </Button>
-        </div>
+    <div className="flex-1 flex justify-center bg-[#F3F4F6]">
+      <div className="w-full max-w-md px-4 pt-6 pb-24">
 
-        {/* 🔎 Buscador */}
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setShowAll(false);
-            }}
-            placeholder="Buscar ruta o parada…"
-            className="w-full pl-10 pr-3 h-11 rounded-xl border bg-background"
-          />
-        </div>
-
-        {err && (
-          <p className="text-xs text-red-600 bg-red-100/60 rounded-md p-2">
-            {err}
-          </p>
-        )}
-      </div>
-
-      {/* Listado */}
-      <div className="p-4 space-y-4">
-        {!loading && shown.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center">
-            No hay coincidencias.
-          </p>
-        )}
-
-        {shown.map((route, index) => (
-          <Card
-            key={route.id}
-            className="overflow-hidden border-2 rounded-3xl hover:shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-bottom"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className="p-5 space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bus className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-foreground">
-                      {route.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {route.description}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => toggleFavorite(route.id)}
-                  className="flex-shrink-0 p-2 rounded-full hover:bg-muted transition-colors"
-                >
-                  <Heart
-                    className={`w-5 h-5 ${route.isFavorite
-                      ? "fill-red-500 text-red-500"
-                      : "text-muted-foreground"
-                      }`}
-                  />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Paradas principales
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {route.mainStops.slice(0, 3).map((stop, idx) => (
-                    <Badge
-                      key={idx}
-                      variant="secondary"
-                      className="rounded-full text-xs"
-                    >
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {stop}
-                    </Badge>
-                  ))}
-                  {route.mainStops.length > 3 && (
-                    <Badge variant="outline" className="rounded-full text-xs">
-                      +{route.mainStops.length - 3} más
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2 border-t border-border">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-xs font-medium">
-                    {route.estimatedTime}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Bus className="w-4 h-4" />
-                  <span className="text-xs font-medium">{route.capacity}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {/* Planificar (OSM) */}
-                <Button
-                  className="h-11 rounded-2xl font-semibold"
-                  onClick={() => openPlanModal(route)}
-                >
-                  Planificar (Elegir origen/destino)
-                  <ChevronRight className="w-5 h-5 ml-1" />
-                </Button>
-
-                {/* (Opcional) Reservar clásico contra API */}
-                <Button
-                  variant="outline"
-                  className="h-11 rounded-2xl font-semibold"
-                  disabled={route.status === "INCIDENT"}
-                  onClick={() => openReserveModal(route)}
-                >
-                  {route.status === "INCIDENT"
-                    ? "No disponible"
-                    : "Reservar (API)"}
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-
-        {filtered.length > PAGE_SIZE && !showAll && (
-          <div className="pt-2">
-            <Button
-              variant="outline"
-              className="w-full rounded-xl"
-              onClick={() => setShowAll(true)}
-            >
-              Ver más rutas
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* ===== Modal PLAN O/D (OSM) ===== */}
-      {showPlanModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
-          onClick={() => setShowPlanModal(false)}
-        >
-          <Card
-            className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold text-foreground">
-              Planificar en {planRoute?.name}
-            </h2>
-
-            {/* Origen */}
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Origen</label>
-              <input
-                className="w-full border rounded-xl p-2 bg-background"
-                placeholder="Ej. UAM"
-                value={fromQuery}
-                onChange={(e) => {
-                  setFromQuery(e.target.value);
-                  setFromStop(null);
-                }}
+        {/* === CONTENEDOR MAPA + BUSCADOR === */}
+        <div className="relative w-full">
+          {/* Mapa (aquí luego pones Google Maps) */}
+          <div className="h-[320px] rounded-3xl overflow-hidden shadow-md bg-slate-200 relative">
+            {/* 🔁 Placeholder: reemplaza este div por tu componente de Google Maps */}
+            <div id="routes-map" className="w-full h-full">
+              <Image
+                src="/assets/bg-routes-map.jpg" // o cambia por el nombre que tengas
+                alt="Mapa de paradas"
+                fill
+                className="object-cover"
               />
+            </div>
 
-              {/* Usar mi ubicación */}
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl"
-                  disabled={!userLoc || allStops.length === 0}
-                  onClick={() => {
-                    if (!userLoc) return;
-                    const near = nearestStop(allStops, userLoc);
-                    if (near) {
-                      setFromStop(near);
-                      setFromQuery(near.name);
-                    }
-                  }}
-                >
-                  Usar mi ubicación
-                </Button>
+            {/* Pin amarillo en el centro */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-full bg-[#FFC933] shadow-lg flex items-center justify-center">
+                <div className="w-4 h-4 rounded-full bg-white" />
+              </div>
+            </div>
+          </div>
+
+          {/* Barra de búsqueda flotando ligeramente SOBRE el mapa */}
+          <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-[88%]">
+            <div className="bg-white shadow-lg rounded-full px-4 h-12 flex items-center gap-2">
+              <Search className="w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Busca una dirección"
+                className="flex-1 bg-transparent outline-none text-sm placeholder:text-gray-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* SEPARACIÓN ENTRE MAPA Y TARJETA */}
+        <div className="h-7" />
+
+        {/* === TARJETA "MI PARADA: CENTRAL" === */}
+        <div className="w-full">
+          <button
+            onClick={handleSelectStop}
+            className="w-full text-left rounded-3xl bg-white shadow-[0_18px_40px_rgba(0,0,0,0.18)] overflow-hidden transition-all duration-300 hover:shadow-[0_22px_50px_rgba(0,0,0,0.25)] hover:-translate-y-1 active:translate-y-0 active:scale-[0.99]"
+          >
+            {/* Foto de la parada */}
+            <div className="relative w-full h-[150px]">
+              <Image
+                src="/assets/dashboard-hero.jpg" // exporta esta imagen con este nombre
+                alt="Parada de buses"
+                fill
+                className="object-cover"
+              />
+            </div>
+
+            {/* Contenido */}
+            <div className="px-5 pt-4 pb-4">
+              <h3 className="font-semibold text-lg text-slate-900">
+                Mi parada: Central
+              </h3>
+
+              <p className="text-xs mt-1 flex items-center gap-1 text-gray-600">
+                <MapPin className="w-3 h-3 text-[#FFC933]" />
+                123 Anywhere st. Any city, ST 12345
+              </p>
+
+              <div className="mt-4">
+                <p className="text-sm font-semibold text-slate-900 mb-1">
+                  Buses que llegan
+                </p>
+
+                <div className="text-sm space-y-1">
+                  <p>
+                    <span className="text-blue-600 font-bold">A</span>{" "}
+                    Bus 123
+                  </p>
+                  <p>
+                    <span className="text-red-600 font-bold">B</span>{" "}
+                    Bus 111
+                  </p>
+                  <p>
+                    <span className="text-green-600 font-bold">$</span>{" "}
+                    C$: 2.50
+                  </p>
+                </div>
               </div>
 
-              {fromQuery && !fromStop && (
-                <div className="border rounded-xl divide-y max-h-44 overflow-auto">
-                  {(() => {
-                    const { suggestions, hasGlobalMatch, usingRouteStops } =
-                      suggestStops(fromQuery, planRoute);
-
-                    if (suggestions.length > 0) {
-                      return suggestions.map((s) => (
-                        <button
-                          key={s.id}
-                          className="w-full text-left px-3 py-2 hover:bg-muted"
-                          onClick={() => setFromStop(s)}
-                        >
-                          {s.name}
-                        </button>
-                      ));
-                    }
-
-                    if (usingRouteStops && hasGlobalMatch) {
-                      return (
-                        <p className="px-3 py-2 text-xs text-muted-foreground">
-                          Esta ruta no pasa por esta ubicación.
-                        </p>
-                      );
-                    }
-
-                    return (
-                      <p className="px-3 py-2 text-xs text-muted-foreground">
-                        No encontramos paradas con ese nombre.
-                      </p>
-                    );
-                  })()}
+              {/* Botón para ir al Estado del viaje */}
+              <div className="mt-5">
+                <div className="w-full h-[44px] rounded-[999px] bg-gradient-to-r from-[#FFC933] via-[#F6A33A] to-[#F27C3A] flex items-center justify-center text-white text-sm font-semibold shadow-[0_14px_28px_rgba(0,0,0,0.25)]">
+                  Ver estado del viaje
                 </div>
-              )}
-              {fromStop && (
-                <p className="text-xs text-muted-foreground">
-                  Seleccionado: {fromStop.name}
-                </p>
-              )}
+              </div>
             </div>
-
-            {/* Destino */}
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Destino</label>
-              <input
-                className="w-full border rounded-xl p-2 bg-background"
-                placeholder="Ej. Mercado Roberto Huembes"
-                value={toQuery}
-                onChange={(e) => {
-                  setToQuery(e.target.value);
-                  setToStop(null);
-                }}
-              />
-              {toQuery && !toStop && (
-                <div className="border rounded-xl divide-y max-h-44 overflow-auto">
-                  {(() => {
-                    const { suggestions, hasGlobalMatch, usingRouteStops } =
-                      suggestStops(toQuery, planRoute);
-
-                    if (suggestions.length > 0) {
-                      return suggestions.map((s) => (
-                        <button
-                          key={s.id}
-                          className="w-full text-left px-3 py-2 hover:bg-muted"
-                          onClick={() => setToStop(s)}
-                        >
-                          {s.name}
-                        </button>
-                      ));
-                    }
-
-                    if (usingRouteStops && hasGlobalMatch) {
-                      return (
-                        <p className="px-3 py-2 text-xs text-muted-foreground">
-                          Esta ruta no pasa por esta ubicación.
-                        </p>
-                      );
-                    }
-
-                    return (
-                      <p className="px-3 py-2 text-xs text-muted-foreground">
-                        No encontramos paradas con ese nombre.
-                      </p>
-                    );
-                  })()}
-                </div>
-              )}
-              {toStop && (
-                <p className="text-xs text-muted-foreground">
-                  Seleccionado: {toStop.name}
-                </p>
-              )}
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                className="flex-1 rounded-xl"
-                onClick={confirmPlan}
-                disabled={!fromStop || !toStop}
-              >
-                Mostrar en el mapa
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 rounded-xl"
-                onClick={() => setShowPlanModal(false)}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </Card>
+          </button>
         </div>
-      )}
-
-      {/* ===== Modal reserva clásica (si la usas) ===== */}
-      {showReserveModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
-          onClick={() => setShowReserveModal(false)}
-        >
-          <Card
-            className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold text-foreground">
-              Reservar {selectedRoute?.name}
-            </h2>
-            {/* aquí va tu UI de zonas/paradas/horarios si la mantienes */}
-          </Card>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

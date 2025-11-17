@@ -1,174 +1,139 @@
-// src/components/notifications-screen.tsx
-"use client";
+"use client"
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { Bell, CheckCheck, Check, RefreshCw } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  getMyNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
-} from "@/lib/api";
-import type { UiNotification } from "@/types"; 
+import { useEffect, useState } from "react"
+import { Bell, RefreshCw, Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 
-import { getToken } from "@/lib/session";
+interface NotificationItem {
+  id: string
+  title: string
+  description: string
+  read: boolean
+}
 
-type Props = {
-  onUpdateUnreadCount?: (n: number) => void;
-};
+interface NotificationsScreenProps {
+  onUpdateUnreadCount?: (count: number) => void
+}
 
-export function NotificationsScreen({ onUpdateUnreadCount }: Props) {
-  const token = getToken();
+export function NotificationsScreen({
+  onUpdateUnreadCount,
+}: NotificationsScreenProps) {
+  // 🔔 NOTIFICACIONES DE EJEMPLO (luego las cambias por las reales)
+  const [items, setItems] = useState<NotificationItem[]>([
+    {
+      id: "1",
+      title: "Tu ruta está por llegar!",
+      description: "Toca para ver más detalles",
+      read: false,
+    },
+    {
+      id: "2",
+      title: "Saldo bajo: Recargar",
+      description: "Toca para ver más detalles",
+      read: false,
+    },
+    {
+      id: "3",
+      title: "Cambio de ruta 28/10!",
+      description: "Toca para ver más detalles",
+      read: false,
+    },
+    {
+      id: "4",
+      title: "Advertencia de seguridad!",
+      description: "Toca para ver más detalles",
+      read: false,
+    },
+  ])
 
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-  const [items, setItems] = useState<UiNotification[]>([]);
-  const [markingAll, setMarkingAll] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const unread = useMemo(() => items.filter((n) => !n.read).length, [items]);
-
-  // propaga el contador a Dashboard
+  // Avisar al Dashboard cuántas no leídas hay
   useEffect(() => {
-    onUpdateUnreadCount?.(unread);
-  }, [unread, onUpdateUnreadCount]);
+    const unread = items.filter((n) => !n.read).length
+    onUpdateUnreadCount?.(unread)
+  }, [items, onUpdateUnreadCount])
 
-  const fetchList = useCallback(async () => {
-    setErr(null);
-    if (!token) {
-      setLoading(false);
-      setErr("Debes iniciar sesión");
-      return;
-    }
-    try {
-      setLoading(true);
-      const { notifications } = await getMyNotifications(token);
-      setItems(notifications ?? []);
-    } catch (e: any) {
-      setErr(e?.message ?? "No se pudieron cargar los avisos");
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const handleReload = () => {
+    // Aquí luego metes la lógica real de recarga
+    // por ahora solo simulo que “refresca” manteniendo la lista
+    console.log("Recargar notificaciones (TODO lógica real)")
+  }
 
-  useEffect(() => {
-    fetchList();
-  }, [fetchList]);
+  const handleMarkAll = () => {
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+  }
 
-  const reload = async () => {
-    if (!token) return;
-    try {
-      setRefreshing(true);
-      await fetchList();
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const markOne = async (id: string) => {
-    if (!token) return;
-    try {
-      // optimista
-      setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-      await markNotificationRead(token, id);
-    } catch (e: any) {
-      // revert si falla
-      setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: false } : n)));
-      setErr(e?.message ?? "No se pudo marcar como leído");
-    }
-  };
-
-  const markAll = async () => {
-    if (!token) return;
-    try {
-      setMarkingAll(true);
-      // optimista
-      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-      await markAllNotificationsRead(token);
-    } catch (e: any) {
-      setErr(e?.message ?? "No se pudo marcar todo como leído");
-      // recargar estado real desde el servidor si algo falla
-      fetchList();
-    } finally {
-      setMarkingAll(false);
-    }
-  };
+  const handleOpenNotification = (id: string) => {
+    // Aquí después puedes abrir un detalle, navegar, etc.
+    // Por ahora solo la marcamos como leída.
+    setItems((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    )
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto pb-20">
-      <div className="p-4 space-y-4 max-w-md mx-auto">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="w-6 h-6" />
-            <h1 className="text-xl font-semibold">Avisos</h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl gap-2"
-              onClick={reload}
-              disabled={refreshing}
-              title="Recargar"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-              {refreshing ? "Cargando…" : "Recargar"}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl gap-2"
-              onClick={markAll}
-              disabled={markingAll || unread === 0}
-              title="Marcar todo como leído"
-            >
-              <CheckCheck className="w-4 h-4" />
-              {markingAll ? "Marcando…" : "Marcar todo"}
-            </Button>
-          </div>
+    <div className="relative z-10 min-h-[calc(100vh-80px)] flex flex-col">
+      {/* HEADER */}
+      <header className="px-5 pt-7 pb-4">
+        <div className="flex items-center gap-3 mb-4">
+          <Bell className="w-5 h-5" />
+          <h1 className="text-xl font-semibold">Avisos</h1>
         </div>
 
-        {loading && <p className="text-sm text-muted-foreground">Cargando…</p>}
-        {err && <p className="text-sm text-red-600 bg-red-100/60 p-2 rounded-lg">{err}</p>}
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleReload}
+            className="flex-1 h-9 rounded-full bg-white/90 shadow-sm border border-white/40 flex items-center justify-center gap-2 text-sm font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Recargar
+          </button>
 
-        {!loading && items.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center">No tienes avisos.</p>
+          <button
+            type="button"
+            onClick={handleMarkAll}
+            className="flex-1 h-9 rounded-full bg-[#E3E7FF] text-[#1E40AF] shadow-sm border border-white/40 flex items-center justify-center gap-2 text-sm font-medium"
+          >
+            <Check className="w-4 h-4" />
+            Marcar todo
+          </button>
+        </div>
+      </header>
+
+      {/* LISTA DE TARJETAS */}
+      <main className="px-5 pb-6 flex-1">
+        {items.length === 0 ? (
+          <div className="h-full flex items-start justify-center pt-10">
+            <p className="text-sm text-white/80">No tienes avisos.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {items.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => handleOpenNotification(n.id)}
+                className="w-full text-left"
+              >
+                <Card className="w-full rounded-full px-5 py-3 bg-white/95 shadow-[0_10px_25px_rgba(0,0,0,0.12)] border-0">
+                  <div className="flex flex-col">
+                    <span
+                      className={`text-sm font-semibold ${n.read ? "text-[#2563eb]" : "text-[#1d4ed8]"
+                        }`}
+                    >
+                      {n.title}
+                    </span>
+                    <span className="text-[11px] text-slate-500 mt-0.5">
+                      {n.description}
+                    </span>
+                  </div>
+                </Card>
+              </button>
+            ))}
+          </div>
         )}
-
-        <div className="space-y-3">
-          {items.map((n) => (
-            <Card
-              key={n.id}
-              className={`p-4 rounded-2xl border-2 ${n.read ? "opacity-75" : ""}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">{n.title}</p>
-                  <p className="text-sm text-muted-foreground">{n.body}</p>
-                  {n.sentAt && (
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      {new Date(n.sentAt).toLocaleString()}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  variant={n.read ? "outline" : "default"}
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => markOne(n.id)}
-                  disabled={n.read}
-                  title={n.read ? "Leído" : "Marcar como leído"}
-                >
-                  <Check className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+      </main>
     </div>
-  );
+  )
 }

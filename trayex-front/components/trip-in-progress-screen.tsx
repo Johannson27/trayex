@@ -1,236 +1,221 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { X, AlertTriangle, Share2, Clock } from "lucide-react"
+import { useEffect, useState } from "react"
+import Image from "next/image"
+import { AlertTriangle, Clock, MapPin, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-
-interface Stop {
-  id: string
-  name: string
-  status: "reached" | "current" | "upcoming"
-}
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface TripInProgressScreenProps {
   routeName: string
   onEndTrip: () => void
 }
 
-export function TripInProgressScreen({ routeName, onEndTrip }: TripInProgressScreenProps) {
-  const [tripStatus, setTripStatus] = useState<"on-way" | "on-board">("on-way")
-  const [remainingTime, setRemainingTime] = useState(15)
+export function TripInProgressScreen({
+  routeName,
+  onEndTrip,
+}: TripInProgressScreenProps) {
+  const [remainingTime, setRemainingTime] = useState(10)
+  const [progress, setProgress] = useState(30)
   const [showSOSModal, setShowSOSModal] = useState(false)
-  const [sosType, setSOSType] = useState<string | null>(null)
-  const [progress, setProgress] = useState(25)
 
-  const stops: Stop[] = [
-    { id: "1", name: "Campus Central", status: "reached" },
-    { id: "2", name: "Av. Principal", status: "reached" },
-    { id: "3", name: "Centro Comercial", status: "current" },
-    { id: "4", name: "Zona Industrial", status: "upcoming" },
-  ]
-
+  // timer demo
   useEffect(() => {
     const timer = setInterval(() => {
-      setRemainingTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          onEndTrip()
-          return 0
-        }
-        return prev - 1
-      })
-      setProgress((prev) => Math.min(prev + 2, 100))
-    }, 60000)
+      setRemainingTime((prev) => (prev > 0 ? prev - 1 : 0))
+      setProgress((prev) => Math.min(prev + 5, 100))
+    }, 60_000)
 
     return () => clearInterval(timer)
-  }, [onEndTrip])
+  }, [])
 
   const handleSOSSubmit = (type: string) => {
-    setSOSType(type)
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log("[v0] SOS Alert sent:", {
-            type,
-            location: {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            },
-            timestamp: new Date().toISOString(),
-          })
-          alert(`Alerta de ${type} enviada. Ubicación GPS compartida con autoridades.`)
-          setShowSOSModal(false)
-        },
-        (error) => {
-          console.log("[v0] Geolocation error:", error)
-          alert("No se pudo obtener la ubicación GPS. Alerta enviada sin ubicación.")
-          setShowSOSModal(false)
-        },
-      )
+    if (!navigator.geolocation) {
+      alert(`Alerta de ${type} enviada (sin ubicación).`)
+      setShowSOSModal(false)
+      return
     }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log("[Trayex] SOS:", {
+          type,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+        alert(
+          `Alerta de ${type} enviada.\nUbicación compartida con autoridades.`
+        )
+        setShowSOSModal(false)
+      },
+      (err) => {
+        console.error(err)
+        alert(`Alerta de ${type} enviada (no se pudo obtener ubicación).`)
+        setShowSOSModal(false)
+      }
+    )
   }
 
   const handleShareTrip = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const shareUrl = `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`
-          if (navigator.share) {
-            navigator
-              .share({
-                title: "Mi viaje en Trayex",
-                text: `Estoy viajando en ${routeName}. Sígueme en tiempo real:`,
-                url: shareUrl,
-              })
-              .catch((error) => console.log("[v0] Share error:", error))
-          } else {
-            alert(`Compartir ubicación: ${shareUrl}`)
-          }
-        },
-        (error) => {
-          console.log("[v0] Geolocation error:", error)
-          alert("No se pudo obtener la ubicación para compartir.")
-        },
-      )
+    if (!navigator.geolocation) {
+      alert("No se pudo obtener la ubicación para compartir.")
+      return
     }
-  }
 
-  const getStopIcon = (status: Stop["status"]) => {
-    switch (status) {
-      case "reached":
-        return "🟢"
-      case "current":
-        return "🔵"
-      case "upcoming":
-        return "⚪"
-    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const url = `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`
+
+        if (navigator.share) {
+          navigator
+            .share({
+              title: "Mi viaje en Trayex",
+              text: `Estoy viajando en ${routeName}.`,
+              url,
+            })
+            .catch((e) => console.error(e))
+        } else {
+          alert(`Comparte este enlace:\n${url}`)
+        }
+      },
+      () => {
+        alert("No se pudo obtener la ubicación para compartir.")
+      }
+    )
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      {/* Header with SOS Button */}
-      <div className="bg-card border-b border-border px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onEndTrip} className="rounded-full">
-            <X className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="font-bold text-lg text-foreground">{routeName}</h1>
-            <p className="text-xs text-muted-foreground">Viaje en progreso</p>
-          </div>
-        </div>
-        <Button
-          variant="destructive"
-          size="sm"
-          className="rounded-full font-semibold"
-          onClick={() => setShowSOSModal(true)}
-        >
-          <AlertTriangle className="w-4 h-4 mr-1" />
-          SOS
-        </Button>
-      </div>
+    <div className="min-h-[calc(100vh-80px)] flex flex-col px-5 pt-10 pb-4 text-white">
+      {/* Header */}
+      <header className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]">
+          Estado del viaje
+        </h1>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Status Card */}
-        <Card className="border-2 rounded-3xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Estado actual</p>
-              <p className="text-2xl font-bold text-foreground">{tripStatus === "on-way" ? "En camino" : "Abordo"}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Tiempo restante</p>
-              <div className="flex items-baseline gap-1">
-                <p className="text-3xl font-bold text-primary">{remainingTime}</p>
-                <p className="text-sm text-muted-foreground">min</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Progreso del viaje</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="h-3 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-1000 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Stops List */}
-        <Card className="border-2 rounded-3xl p-6 space-y-4">
-          <h2 className="font-bold text-lg text-foreground">Paradas</h2>
-          <div className="space-y-3">
-            {stops.map((stop, index) => (
-              <div key={stop.id} className="flex items-center gap-3">
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl">{getStopIcon(stop.status)}</span>
-                  {index < stops.length - 1 && (
-                    <div
-                      className={`w-0.5 h-8 ${stop.status === "reached" ? "bg-green-500" : "bg-muted"} transition-colors`}
-                    />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p
-                    className={`font-semibold ${
-                      stop.status === "current"
-                        ? "text-primary text-lg"
-                        : stop.status === "reached"
-                          ? "text-muted-foreground"
-                          : "text-foreground"
-                    }`}
-                  >
-                    {stop.name}
-                  </p>
-                  {stop.status === "current" && (
-                    <Badge variant="secondary" className="mt-1 rounded-full text-xs">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Llegando en 2 min
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Share Trip Button */}
         <Button
           variant="outline"
-          size="lg"
-          className="w-full h-14 rounded-2xl font-semibold border-2 bg-transparent"
-          onClick={handleShareTrip}
+          size="sm"
+          className="rounded-full bg-white/10 border-white/60 text-xs font-medium px-4 h-9 hover:bg-white/20"
+          onClick={onEndTrip}
         >
-          <Share2 className="w-5 h-5 mr-2" />
-          Compartir mi viaje
+          Cambiar parada
+        </Button>
+      </header>
+
+      {/* Card principal */}
+      <Card className="bg-white rounded-[26px] px-6 pt-5 pb-6 shadow-[0_24px_40px_rgba(0,0,0,0.35)] text-slate-900">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <p className="text-sm text-slate-500 mb-1">Abordo</p>
+            <p className="text-xl font-semibold leading-tight">{routeName}</p>
+            <p className="mt-2 flex items-center gap-1 text-[11px] text-slate-500">
+              <Clock className="w-3 h-3" />
+              Tiempo restante: {remainingTime} minutos
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowSOSModal(true)}
+            className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#FFC933] text-slate-900 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
+          >
+            SOS
+          </button>
+        </div>
+
+        {/* progress */}
+        <div className="mt-4">
+          <div className="h-2.5 w-full rounded-full bg-slate-200 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#2F62F4] transition-all duration-700 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* texto A / B / precio (demo) */}
+        <div className="mt-5 space-y-1 text-sm">
+          <p className="font-semibold">A  Universidad Americana</p>
+          <p className="font-semibold">B  Mercado Roberto Huembes</p>
+          <p className="font-semibold">$  C$: 2.50</p>
+        </div>
+      </Card>
+
+      {/* botón compartir viaje */}
+      <Button
+        type="button"
+        onClick={handleShareTrip}
+        className="mt-6 h-12 w-full rounded-full text-base font-semibold shadow-[0_18px_30px_rgba(0,0,0,0.35)] border-0 flex items-center justify-center gap-2"
+        style={{
+          background:
+            "linear-gradient(90deg, #FFC933 0%, #F6A33A 50%, #F27C3A 100%)",
+        }}
+      >
+        <Share2 className="w-5 h-5" />
+        Compartir mi viaje
+      </Button>
+
+      {/* botones secundarios */}
+      <div className="mt-5 space-y-3">
+        <Button
+          variant="outline"
+          className="w-full h-11 rounded-full bg-white/85 text-[#2F62F4] border-[#2F62F4] flex items-center justify-start gap-3 px-5 text-sm font-medium"
+          onClick={() => alert("Compartir mi ubicación (lógica luego)")}
+        >
+          <MapPin className="w-4 h-4" />
+          Compartir mi ubicación
+        </Button>
+
+        <Button
+          variant="outline"
+          className="w-full h-11 rounded-full bg-white/85 text-[#2F62F4] border-[#2F62F4] flex items-center justify-start gap-3 px-5 text-sm font-medium"
+          onClick={() => alert("Advertencias (lógica luego)")}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          Advertencias
+        </Button>
+
+        <Button
+          variant="outline"
+          className="w-full h-11 rounded-full bg-white/85 text-[#2F62F4] border-[#2F62F4] flex items-center justify-start gap-3 px-5 text-sm font-medium"
+          onClick={() => alert("Protocolos Trayex (lógica luego)")}
+        >
+          <div className="w-4 h-4 relative">
+            <Image
+              src="/icons/icon-192.png"
+              alt="Trayex"
+              fill
+              className="object-contain"
+            />
+          </div>
+          Protocolos Trayex
         </Button>
       </div>
 
-      {/* SOS Modal */}
+      {/* Modal SOS */}
       <Dialog open={showSOSModal} onOpenChange={setShowSOSModal}>
         <DialogContent className="rounded-3xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-center">Emergencia SOS</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-center">
+              Emergencia SOS
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-4">
             <p className="text-sm text-muted-foreground text-center">
-              Selecciona el tipo de emergencia. Tu ubicación GPS será enviada automáticamente.
+              Selecciona el tipo de emergencia. Tu ubicación GPS será enviada
+              automáticamente.
             </p>
             <div className="space-y-2">
               <Button
                 variant="destructive"
                 size="lg"
-                className="w-full h-14 rounded-2xl font-semibold text-base"
+                className="w-full h-12 rounded-2xl font-semibold text-base"
                 onClick={() => handleSOSSubmit("Asalto")}
               >
                 🚨 Asalto
@@ -238,7 +223,7 @@ export function TripInProgressScreen({ routeName, onEndTrip }: TripInProgressScr
               <Button
                 variant="destructive"
                 size="lg"
-                className="w-full h-14 rounded-2xl font-semibold text-base"
+                className="w-full h-12 rounded-2xl font-semibold text-base"
                 onClick={() => handleSOSSubmit("Accidente")}
               >
                 🚑 Accidente
@@ -246,7 +231,7 @@ export function TripInProgressScreen({ routeName, onEndTrip }: TripInProgressScr
               <Button
                 variant="destructive"
                 size="lg"
-                className="w-full h-14 rounded-2xl font-semibold text-base"
+                className="w-full h-12 rounded-2xl font-semibold text-base"
                 onClick={() => handleSOSSubmit("Emergencia médica")}
               >
                 🩺 Emergencia médica

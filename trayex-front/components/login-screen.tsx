@@ -87,7 +87,7 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
     <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
       {/* Fondo a pantalla completa (puedes cambiar a otro bg si luego exportas uno específico) */}
       <Image
-        src="/assets/bg-register-student.jpg"
+        src="/assets/bg-welcome.jpg"
         alt="Fondo login Trayex"
         fill
         priority

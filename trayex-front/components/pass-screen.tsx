@@ -1,360 +1,271 @@
-"use client";
+"use client"
 
-import { useEffect, useState, useCallback } from "react";
-import QRCode from "react-qr-code";
+import Image from "next/image"
+import { useState } from "react"
+import { Bus } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
-import { QrCode as QrIcon, Wallet, Clock, CreditCard, MapPin, TrendingUp, TrendingDown, Gift, Smartphone } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+type RouteItem = {
+  id: string
+  code: string
+  universities: string
+  isFavorite: boolean
+}
 
-import { getPassQR, rotatePassQR, getMyReservations, cancelReservation } from "@/lib/api";
-import { getToken } from "@/lib/session";
-import type { Reservation } from "@/types";
+type TimeSlotId = "morning" | "noon" | "afternoon" | "night"
 
-// Tipado simple alineado al API (status es string en la respuesta)
-type ReservationRow = {
-  id: string;
-  status: string; // <- string aquí (no uses ReservationStatus)
-  offlineToken?: string | null;
-  createdAt: string;
-  timeslot: {
-    id: string;
-    startAt: string;
-    endAt: string;
-    zoneId: string;
-    zone: { name: string };
-  };
-  stop: { id: string; name: string };
-};
+const MOCK_ROUTES: RouteItem[] = [
+  {
+    id: "123",
+    code: "123",
+    universities: "ULAM, UDM, UCYT",
+    isFavorite: true,
+  },
+  {
+    id: "111",
+    code: "111",
+    universities: "UNCSM, UNI, UNI-RUPAP, UNP, UNAN",
+    isFavorite: false,
+  },
+  {
+    id: "102",
+    code: "102",
+    universities: "UNCSM, UNI, UNI-RUPAP, UNP",
+    isFavorite: false,
+  },
+  {
+    id: "6",
+    code: "6",
+    universities: "UNI-RUPAP, UNP",
+    isFavorite: false,
+  },
+  {
+    id: "104",
+    code: "104",
+    universities: "UNIVALLE, UNI-RUPAP, UDM, UCYT",
+    isFavorite: false,
+  },
+  {
+    id: "117",
+    code: "117",
+    universities: "UNCSM, UNICIT, UNAN",
+    isFavorite: false,
+  },
+]
 
-export function PassScreen() {
-  // ===== QR Dinámico =====
-  const [qrValidTime, setQrValidTime] = useState(30);
-  const [qrValue, setQrValue] = useState<string | null>(null);
-  const [rotating, setRotating] = useState(false);
+// ahora usamos TUS svg como iconos
+const TIME_SLOTS: { id: TimeSlotId; label: string; icon: string }[] = [
+  { id: "morning", label: "MAÑANA", icon: "/assets/mañana.svg" },
+  { id: "noon", label: "MEDIO DÍA", icon: "/assets/mediodia.svg" },
+  { id: "afternoon", label: "TARDE", icon: "/assets/tarde.svg" },
+  { id: "night", label: "NOCHE", icon: "/assets/noche.svg" },
+]
 
-  // ===== Saldo + Recarga (UI) =====
-  const [balance, setBalance] = useState(12.4);
-  const [showRechargeModal, setShowRechargeModal] = useState(false);
+export function PassesScreen() {
+  const [routes, setRoutes] = useState<RouteItem[]>(MOCK_ROUTES)
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(
+    MOCK_ROUTES[0]?.id ?? null,
+  )
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlotId | null>("morning")
 
-  // ===== Reservas =====
-  const [reservations, setReservations] = useState<ReservationRow[]>([]);
-  const [loadingRes, setLoadingRes] = useState(false);
-  const [errRes, setErrRes] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const selectedRoute =
+    routes.find((r) => r.id === selectedRouteId) ?? routes[0]
 
-  const token = getToken();
+  const toggleFavorite = (id: string) => {
+    setRoutes((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, isFavorite: !r.isFavorite } : r,
+      ),
+    )
+  }
 
-  // Obtener primer QR
-  const fetchFirstQR = useCallback(async () => {
-    if (!token) return;
-    try {
-      const { qr } = await getPassQR(token);
-      setQrValue(qr);
-      setQrValidTime(30);
-    } catch {
-      setQrValue(null);
-    }
-  }, [token]);
-
-  // Rotar QR
-  const rotateQR = useCallback(async () => {
-    if (!token || rotating) return;
-    try {
-      setRotating(true);
-      const { qr } = await rotatePassQR(token);
-      setQrValue(qr);
-      setQrValidTime(30);
-    } catch {
-      // mantiene anterior si falla
-    } finally {
-      setRotating(false);
-    }
-  }, [token, rotating]);
-
-  // Load primer QR al montar
-  useEffect(() => {
-    fetchFirstQR();
-  }, [fetchFirstQR]);
-
-  // Countdown + rotación cada 30s
-  useEffect(() => {
-    const t = setInterval(() => {
-      setQrValidTime((prev) => {
-        if (prev <= 1) {
-          rotateQR();
-          return 30;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, [rotateQR]);
-
-  // Cargar reservas
-  const loadReservations = useCallback(async () => {
-    if (!token) return;
-    setLoadingRes(true);
-    setErrRes(null);
-    try {
-      const { reservations } = await getMyReservations(token); // ← token OBLIGATORIO
-      setReservations(reservations as ReservationRow[]);
-    } catch (e: any) {
-      setErrRes(e?.message ?? "No se pudieron cargar tus reservas");
-    } finally {
-      setLoadingRes(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    loadReservations();
-  }, [loadReservations]);
-
-  const onCancelReservation = async (id: string) => {
-    if (!token) return;
-    try {
-      setCancellingId(id);
-      await cancelReservation(token, id); // ← (token, id)
-      await loadReservations();
-    } catch (e: any) {
-      alert(e?.message ?? "No se pudo cancelar la reserva");
-    } finally {
-      setCancellingId(null);
-    }
-  };
-
-  // Mock de movimientos
-  const tripHistory = [
-    { id: 1, route: "Ruta 1 - Norte", amount: -1.5, type: "expense", date: "Hoy, 14:30" },
-    { id: 2, route: "Ruta 3 - Centro", amount: -1.5, type: "expense", date: "Hoy, 09:15" },
-    { id: 3, route: "Recarga en línea", amount: 20.0, type: "recharge", date: "Ayer, 18:00" },
-    { id: 4, route: "Ruta 2 - Sur", amount: -1.5, type: "expense", date: "Ayer, 16:45" },
-  ];
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const isExpiring = !!qrValue && qrValidTime <= 5;
+  const handleReserve = () => {
+    // aquí luego metes la lógica real 💳
+    alert("Aquí va la lógica para crear la reserva ✨")
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto pb-20 bg-background">
-      <div className="p-4 space-y-4 max-w-md mx-auto">
-        {/* Header */}
-        <div className="pt-2 pb-4">
-          <h1 className="text-2xl font-bold text-foreground">Trayex Pass</h1>
-          <p className="text-sm text-muted-foreground">Tu pase digital para viajar</p>
-        </div>
+    // NO le ponemos bg aquí para que se vea el mismo fondo
+    // del dashboard (bg-dashboard.jpg)
+    <div className="flex-1 overflow-y-auto pb-24">
+      <div className="max-w-md mx-auto px-4 pt-6 pb-8 space-y-6">
+        {/* título grande arriba, como en el figma */}
+        <h1 className="text-center text-white text-xl font-semibold drop-shadow mb-1">
+          Reserva
+        </h1>
 
-        {/* QR Dinámico */}
-        <Card className="p-6 space-y-4 border-2 shadow-lg rounded-3xl bg-card animate-in fade-in duration-500">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Mi QR dinámico</h2>
-            <Badge variant="secondary" className="rounded-full">
-              <Clock className="w-3 h-3 mr-1" />
-              {qrValue ? `Válido por ${formatTime(qrValidTime)}` : "Generando..."}
-            </Badge>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl flex items-center justify-center min-h-[220px]">
-            {qrValue ? (
-              <div className="relative">
-                <QRCode value={qrValue} size={192} />
-                {isExpiring && (
-                  <div className="absolute -inset-3 rounded-xl border-4 border-yellow-400 animate-pulse pointer-events-none" />
-                )}
-              </div>
-            ) : (
-              <div className="text-center space-y-2 text-muted-foreground">
-                <QrIcon className="w-10 h-10 mx-auto animate-pulse" />
-                <p className="text-xs">Obteniendo código...</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl"
-              onClick={rotateQR}
-              disabled={!qrValue || rotating}
-            >
-              {rotating ? "Rotando..." : "Rotar ahora"}
-            </Button>
-            <p className="text-xs text-muted-foreground">Se regenera automáticamente cada 30s</p>
-          </div>
-        </Card>
-
-        {/* Saldo */}
-        <Card className="p-6 space-y-4 border-2 shadow-lg rounded-3xl bg-gradient-to-br from-card to-accent/5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Saldo disponible</p>
-                <p className="text-3xl font-bold text-foreground">S/ {balance.toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-          <Button
-            size="lg"
-            className="w-full h-12 rounded-2xl font-semibold bg-accent hover:bg-accent/90 text-accent-foreground"
-            onClick={() => setShowRechargeModal(true)}
-          >
-            <CreditCard className="w-5 h-5 mr-2" />
-            Recargar saldo
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">También puedes recargar en puntos físicos autorizados</p>
-        </Card>
-
-        {/* Mis reservas (futuras) */}
-        <Card className="p-6 space-y-4 border-2 shadow-lg rounded-3xl bg-card">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Mis reservas</h2>
-            {loadingRes && <span className="text-xs text-muted-foreground">Cargando...</span>}
-          </div>
-
-          {errRes && (
-            <div className="text-xs text-red-600 bg-red-100/70 rounded-xl p-2">{errRes}</div>
-          )}
-
-          {reservations.length === 0 && !loadingRes && (
-            <p className="text-sm text-muted-foreground">No tienes reservas próximas.</p>
-          )}
+        {/* BLOQUE 1: EXPLORAR RUTAS */}
+        <div className="rounded-[32px] bg-white/95 px-4 pt-5 pb-6 shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
+          <h2 className="text-left text-[#153fba] text-sm font-semibold mb-3">
+            Explorar rutas
+          </h2>
 
           <div className="space-y-3">
-            {reservations.map((r) => {
-              const start = new Date(r.timeslot.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              const end = new Date(r.timeslot.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              const date = new Date(r.timeslot.startAt).toLocaleDateString();
-
-              return (
-                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{r.stop.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {r.timeslot.zone.name} • {date} • {start}–{end}
-                      </p>
-                      <p className="text-xs">
-                        <Badge variant="outline" className="rounded-full mt-1">{r.status}</Badge>
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => onCancelReservation(r.id)}
-                    disabled={cancellingId === r.id}
-                  >
-                    {cancellingId === r.id ? "Cancelando..." : "Cancelar"}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-
-        {/* Historial / tarjetas / promos… (igual que tenías) */}
-        <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-card">
-          <h2 className="text-lg font-semibold text-foreground">Historial de movimientos</h2>
-          <div className="space-y-3">
-            {[
-              { id: 1, route: "Ruta 1 - Norte", amount: -1.5, type: "expense", date: "Hoy, 14:30" },
-              { id: 2, route: "Ruta 3 - Centro", amount: -1.5, type: "expense", date: "Hoy, 09:15" },
-              { id: 3, route: "Recarga en línea", amount: 20.0, type: "recharge", date: "Ayer, 18:00" },
-              { id: 4, route: "Ruta 2 - Sur", amount: -1.5, type: "expense", date: "Ayer, 16:45" },
-            ].map((trip) => (
-              <div key={trip.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+            {routes.map((route) => (
+              <div
+                key={route.id}
+                className={`w-full rounded-[999px] bg-white flex items-center justify-between px-4 py-3 shadow-md active:scale-[0.97] transition-transform cursor-pointer border
+                ${selectedRouteId === route.id
+                    ? "border-[#153fba]"
+                    : "border-transparent"
+                  }`}
+                onClick={() => setSelectedRouteId(route.id)}
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${trip.type === "expense" ? "bg-destructive/10" : "bg-success/10"}`}>
-                    {trip.type === "expense" ? <TrendingDown className="w-5 h-5 text-destructive" /> : <TrendingUp className="w-5 h-5 text-success" />}
+                  <div className="relative w-10 h-10">
+                    <Image
+                      src="/assets/bus-fares.png"
+                      alt="Bus"
+                      fill
+                      className="object-contain"
+                    />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{trip.route}</p>
-                    <p className="text-xs text-muted-foreground">{trip.date}</p>
+                  <div className="text-left">
+                    <p className="text-base font-semibold text-[#153fba] leading-none">
+                      {route.code}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">
+                      {route.universities}
+                    </p>
                   </div>
                 </div>
-                <p className={`text-lg font-bold ${trip.type === "expense" ? "text-destructive" : "text-success"}`}>
-                  {trip.amount > 0 ? "+" : ""}S/ {Math.abs(trip.amount).toFixed(2)}
-                </p>
+
+                <button
+                  type="button"
+                  className="relative w-8 h-8 flex items-center justify-center active:scale-90 transition-transform"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleFavorite(route.id)
+                  }}
+                >
+                  <span
+                    className={`relative w-7 h-7 transition-transform ${route.isFavorite ? "scale-110" : "scale-100"
+                      }`}
+                  >
+                    <Image
+                      src={
+                        route.isFavorite
+                          ? "/assets/favorito-activado.jpg"
+                          : "/assets/favorito.png"
+                      }
+                      alt="Favorito"
+                      fill
+                      className="object-contain"
+                    />
+                  </span>
+                </button>
               </div>
             ))}
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-card">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Smartphone className="w-6 h-6 text-primary" />
+        {/* BLOQUE 2: TARJETA DE RESERVA (foto + barra de horarios) */}
+        <Card className="mt-1 rounded-[28px] border-0 shadow-xl overflow-hidden bg-white/95">
+          {/* Foto superior de la parada (como en la 2ª imagen) */}
+          <div className="relative w-full h-40">
+            <Image
+              src="/assets/dashboard-hero.jpg"
+              alt="Parada de buses"
+              fill
+              className="object-cover"
+            />
+          </div>
+
+          <div className="px-5 pt-4 pb-5 space-y-4">
+            {/* Header de la tarjeta (Ruta + estado) */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Bus className="w-4 h-4 text-[#153fba]" />
+                  <p className="text-xs text-slate-500">Reserva para ruta</p>
+                </div>
+                <p className="text-lg font-semibold text-slate-900 leading-tight">
+                  {selectedRoute?.code ?? "—"}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {selectedRoute?.universities ??
+                    "Selecciona una ruta para ver detalles"}
+                </p>
+              </div>
+
+              <Badge className="rounded-full bg-[#ffce45] text-xs font-semibold text-slate-900 px-3 py-1 shadow-sm">
+                Disponible hoy
+              </Badge>
             </div>
-            <div>
-              <h3 className="text-base font-semibold text-foreground">Tarjeta física disponible</h3>
-              <p className="text-xs text-muted-foreground">Respaldo sin batería con NFC/QR</p>
+
+            {/* Texto "Escoge tu tiempo..." */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-slate-800">
+                Escoge tu tiempo para reservar
+              </p>
+
+              {/* Barra SVG de reserva + botones encima */}
+              <div className="relative mt-1 h-24">
+                <Image
+                  src="/assets/reserva-bg.svg"
+                  alt="Selector de tiempo"
+                  fill
+                  className="object-contain pointer-events-none select-none"
+                />
+                <div className="absolute inset-0 flex items-center justify-between px-7">
+                  {TIME_SLOTS.map((slot) => {
+                    const isActive = selectedSlot === slot.id
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot.id)}
+                        className="flex flex-col items-center justify-center text-[10px] font-semibold gap-1"
+                      >
+                        <div
+                          className={`relative w-8 h-8 transition-all ${isActive ? "scale-110" : "opacity-70"
+                            }`}
+                        >
+                          <Image
+                            src={slot.icon}
+                            alt={slot.label}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                        <span
+                          className={
+                            isActive ? "text-[#F39A18]" : "text-slate-500"
+                          }
+                        >
+                          {slot.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Botón principal */}
+            <Button
+              className="w-full h-12 rounded-2xl font-semibold bg-gradient-to-r from-[#FFC933] to-[#FF8C33] text-slate-900 hover:brightness-105"
+              onClick={handleReserve}
+            >
+              Confirmar reserva
+            </Button>
+
+            {/* Mini texto informativo */}
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <p className="text-[11px] text-slate-500">
+                Una vez confirmes, tu reserva aparecerá en la sección{" "}
+                <span className="font-semibold">“Rutas y reservas”</span>.
+              </p>
+              <p className="text-[10px] text-slate-400">
+                *Aquí luego puedes conectar la API real de reservas y
+                favoritos.
+              </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="w-full rounded-xl bg-transparent">
-            Solicitar tarjeta física
-          </Button>
-        </Card>
-
-        <Card className="p-6 space-y-3 border-2 shadow-lg rounded-3xl bg-gradient-to-r from-accent/20 to-primary/20">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
-              <Gift className="w-6 h-6 text-accent-foreground" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-foreground">Promociones activas</h3>
-              <p className="text-xs text-muted-foreground">Recarga S/ 20 y obtén S/ 2 de bonificación</p>
-            </div>
-          </div>
-          <Button variant="secondary" size="sm" className="w-full rounded-xl">
-            Ver todas las promociones
-          </Button>
         </Card>
       </div>
-
-      {/* Modal de recarga */}
-      {showRechargeModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end animate-in fade-in duration-200"
-          onClick={() => setShowRechargeModal(false)}
-        >
-          <Card
-            className="w-full max-w-md mx-auto rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold text-foreground">Recargar saldo</h2>
-            <div className="space-y-3">
-              <Button className="w-full h-12 rounded-2xl justify-start bg-transparent" variant="outline">
-                <CreditCard className="w-5 h-5 mr-3" />
-                Tarjeta de crédito/débito
-              </Button>
-              <Button className="w-full h-12 rounded-2xl justify-start bg-transparent" variant="outline">
-                <Wallet className="w-5 h-5 mr-3" />
-                Billetera digital
-              </Button>
-              <Button className="w-full h-12 rounded-2xl justify-start bg-transparent" variant="outline">
-                <MapPin className="w-5 h-5 mr-3" />
-                Punto físico autorizado
-              </Button>
-            </div>
-            <Button variant="ghost" className="w-full rounded-2xl" onClick={() => setShowRechargeModal(false)}>
-              Cancelar
-            </Button>
-          </Card>
-        </div>
-      )}
     </div>
-  );
+  )
 }

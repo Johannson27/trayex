@@ -5,7 +5,7 @@ import Image from "next/image"
 import { MapPin, ChevronDown, AlertTriangle } from "lucide-react"
 
 import { RoutesScreen } from "@/components/routes-screen"
-import { PassScreen } from "@/components/pass-screen"
+import { PassesScreen } from "@/components/pass-screen"
 import { TripInProgressScreen } from "@/components/trip-in-progress-screen"
 import { NotificationsScreen } from "@/components/notifications-screen"
 import { ProfileScreen } from "@/components/profile-screen"
@@ -13,6 +13,7 @@ import type { UserRole } from "@/types"
 import { getUser, saveUser, getToken } from "@/lib/session"
 import { getMe } from "@/lib/api"
 import { StudentBottomNav, type TabId } from "@/components/student-bottom-nav"
+import { FaresScreen } from "@/components/fares-screen"
 
 type DashboardScreenProps = {
   userRole: UserRole
@@ -126,13 +127,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
 
     if (activeNav === "fares") {
       return (
-        <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent flex flex-col items-center justify-center px-6 text-center">
-          <h2 className="text-xl font-semibold mb-2 text-white">
-            Tarifas
-          </h2>
-          <p className="text-sm text-white/80">
-            Próximamente podrás ver el detalle de las tarifas aquí.
-          </p>
+        <div className="relative z-10 min-h-[calc(100vh-80px)] bg-background">
+          <FaresScreen />
         </div>
       )
     }
@@ -140,7 +136,7 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     if (activeNav === "pass") {
       return (
         <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent">
-          <PassScreen />
+          <PassesScreen />
         </div>
       )
     }

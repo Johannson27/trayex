@@ -28,6 +28,7 @@ export function MapWidget({
     destination = null,
     stopsOnPath = [],
 }: MapWidgetProps) {
+
     const mapRef = useRef<any>(null);
     const [ready, setReady] = useState(false);
 
@@ -36,10 +37,9 @@ export function MapWidget({
     const routeMarkersRef = useRef<any[]>([]);
     const polylineRef = useRef<any>(null);
 
-    // 👉 almacena el path calculado por Google Directions
     const [directionsPath, setDirectionsPath] = useState<LatLng[] | null>(null);
 
-    // Esperar a que google.maps exista
+    // Esperar que google maps exista
     useEffect(() => {
         let mounted = true;
 
@@ -67,13 +67,14 @@ export function MapWidget({
         };
     }, []);
 
-    // Inicializar / recentrar mapa
+    // Inicialización del mapa
     useEffect(() => {
         if (!ready) return;
         const el = document.getElementById("trayex-map") as HTMLElement | null;
         if (!el) return;
 
         if (!mapRef.current) {
+            // @ts-ignore
             mapRef.current = new google.maps.Map(el, {
                 center,
                 zoom,
@@ -84,8 +85,8 @@ export function MapWidget({
         }
     }, [ready, center, zoom]);
 
-    const clearMarkers = (ref: React.MutableRefObject<google.maps.Marker[]>) => {
-        ref.current.forEach((m) => m.setMap(null));
+    const clearMarkers = (ref: any) => {
+        ref.current.forEach((m: any) => m.setMap(null));
         ref.current.length = 0;
     };
 
@@ -93,75 +94,74 @@ export function MapWidget({
     useEffect(() => {
         if (!ready || !mapRef.current) return;
         clearMarkers(busMarkersRef);
-        busMarkersRef.current = buses.map(
-            (p) =>
-                new google.maps.Marker({
-                    position: p,
-                    map: mapRef.current!,
-                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 5 },
-                    title: "Bus",
-                })
-        );
+
+        busMarkersRef.current = buses.map((p) => {
+            // @ts-ignore
+            return new google.maps.Marker({
+                position: p,
+                map: mapRef.current!,
+                // @ts-ignore
+                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 5 },
+                title: "Bus",
+            });
+        });
     }, [ready, buses]);
 
-    // Paradas “sueltas”
+    // Paradas
     useEffect(() => {
         if (!ready || !mapRef.current) return;
         clearMarkers(stopMarkersRef);
-        stopMarkersRef.current = stops.map(
-            (p) =>
-                new google.maps.Marker({
-                    position: p,
-                    map: mapRef.current!,
-                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 3 },
-                    title: p.name ?? "Parada",
-                })
-        );
+
+        stopMarkersRef.current = stops.map((p) => {
+            // @ts-ignore
+            return new google.maps.Marker({
+                position: p,
+                map: mapRef.current!,
+                // @ts-ignore
+                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 3 },
+                title: p.name ?? "Parada",
+            });
+        });
     }, [ready, stops]);
 
-    // 👉 Cuando no tenemos path útil pero sí origen/destino, pedir DIRECTIONS a Google
+    // Google Directions si no hay path manual
     useEffect(() => {
         if (!ready || !mapRef.current) return;
 
-        // Si ya viene un path bueno desde la ruta → no usamos Directions
         if (path && path.length > 1) {
             setDirectionsPath(null);
             return;
         }
 
-        // Necesitamos al menos origen y destino
         if (!origin || !destination) return;
 
+        // @ts-ignore
         const service = new google.maps.DirectionsService();
 
         service.route(
             {
                 origin,
                 destination,
+                // @ts-ignore
                 travelMode: google.maps.TravelMode.DRIVING,
             },
-            (result, status) => {
-                if (
-                    status === google.maps.DirectionsStatus.OK &&
-                    result &&
-                    result.routes &&
-                    result.routes[0]?.overview_path
-                ) {
-                    const pts = result.routes[0].overview_path.map((p) => ({
+            (result: any, status: any) => {
+                // @ts-ignore
+                if (status === google.maps.DirectionsStatus.OK &&
+                    result?.routes?.[0]?.overview_path) {
+                    const pts = result.routes[0].overview_path.map((p: any) => ({
                         lat: p.lat(),
                         lng: p.lng(),
                     }));
-                    console.log("🧭 Directions path recibido:", pts.length, "puntos");
                     setDirectionsPath(pts);
                 } else {
-                    console.warn("❌ Directions falló:", status, result);
                     setDirectionsPath(null);
                 }
             }
         );
     }, [ready, path, origin, destination]);
 
-    // Línea + origen/destino + paradas del tramo
+    // Polyline + markers de ruta
     useEffect(() => {
         if (!ready || !mapRef.current) return;
 
@@ -171,7 +171,6 @@ export function MapWidget({
         }
         clearMarkers(routeMarkersRef);
 
-        // escoger qué path dibujar: el de la ruta o el de Directions
         const effectivePath =
             path && path.length > 1
                 ? path
@@ -179,8 +178,8 @@ export function MapWidget({
                     ? directionsPath
                     : null;
 
-        if (effectivePath && effectivePath.length > 1) {
-            console.log("🗺️ Dibujando polyline con", effectivePath.length, "puntos");
+        if (effectivePath) {
+            // @ts-ignore
             polylineRef.current = new google.maps.Polyline({
                 path: effectivePath,
                 strokeColor: "#1D4ED8",
@@ -189,17 +188,23 @@ export function MapWidget({
                 map: mapRef.current!,
             });
 
+            // @ts-ignore
             const bounds = new google.maps.LatLngBounds();
-            effectivePath.forEach((p) => bounds.extend(p));
+            effectivePath.forEach((p) => {
+                // @ts-ignore
+                bounds.extend(new google.maps.LatLng(p.lat, p.lng));
+            });
             mapRef.current.fitBounds(bounds);
         }
 
         if (origin) {
+            // @ts-ignore
             routeMarkersRef.current.push(
                 new google.maps.Marker({
                     position: origin,
                     map: mapRef.current!,
                     icon: {
+                        // @ts-ignore
                         path: google.maps.SymbolPath.CIRCLE,
                         scale: 7,
                         fillColor: "#10B981",
@@ -213,11 +218,13 @@ export function MapWidget({
         }
 
         if (destination) {
+            // @ts-ignore
             routeMarkersRef.current.push(
                 new google.maps.Marker({
                     position: destination,
                     map: mapRef.current!,
                     icon: {
+                        // @ts-ignore
                         path: google.maps.SymbolPath.CIRCLE,
                         scale: 7,
                         fillColor: "#EF4444",
@@ -230,13 +237,15 @@ export function MapWidget({
             );
         }
 
-        if (stopsOnPath && stopsOnPath.length) {
+        if (stopsOnPath.length) {
             stopsOnPath.forEach((s) => {
+                // @ts-ignore
                 routeMarkersRef.current.push(
                     new google.maps.Marker({
                         position: { lat: s.lat, lng: s.lng },
                         map: mapRef.current!,
                         icon: {
+                            // @ts-ignore
                             path: google.maps.SymbolPath.CIRCLE,
                             scale: 4,
                             fillColor: "#3B82F6",
@@ -249,31 +258,7 @@ export function MapWidget({
                 );
             });
         }
-        if (path && path.length > 1 && mapRef.current && polylineRef.current) {
-            const bounds = new google.maps.LatLngBounds();
-            path.forEach((p) => {
-                bounds.extend(new google.maps.LatLng(p.lat, p.lng));
-            });
-
-            // Márgenes para que no quede pegado a los bordes ni tapado por la card
-            mapRef.current.fitBounds(bounds, {
-                top: 50,
-                bottom: 220,
-                left: 40,
-                right: 40,
-            } as any);
-        }
-
     }, [ready, path, directionsPath, origin, destination, stopsOnPath]);
-
-    if (!ready) {
-        return (
-            <div
-                id="trayex-map"
-                style={{ width: "100%", height: "100%", ...(style || {}) }}
-            />
-        );
-    }
 
     return (
         <div

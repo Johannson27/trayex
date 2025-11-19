@@ -1,2 +1,5 @@
 export{};
-declare global{const google: any;}
+
+declare global {
+    const google: any;
+}

@@ -5,13 +5,14 @@ export default function RootLayout() {
   return (
     <View style={styles.container}>
       <WebView
-        source={{ uri: "https://trayex.vercel.app/app" }}
+        source={{ uri: "https://trayex.vercel.app" }}
         style={{ flex: 1 }}
         originWhitelist={["*"]}
         javaScriptEnabled
         domStorageEnabled
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
+        mixedContentMode="always"
       />
     </View>
   );

@@ -7,6 +7,12 @@
                     "key": "Content-Type",
                     "value": "application/vnd.android.package-archive"
                 }
+            ],
+            "crons": [
+                {
+                    "path": "/api/keep-alive",
+                    "schedule": "*/5 * * * *"
+                }
             ]
         }
     ]

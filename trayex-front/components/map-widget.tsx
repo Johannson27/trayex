@@ -31,10 +31,10 @@ export function MapWidget({
     const mapRef = useRef<any>(null);
     const [ready, setReady] = useState(false);
 
-    const busMarkersRef = useRef<google.maps.Marker[]>([]);
-    const stopMarkersRef = useRef<google.maps.Marker[]>([]);
-    const routeMarkersRef = useRef<google.maps.Marker[]>([]);
-    const polylineRef = useRef<google.maps.Polyline | null>(null);
+    const busMarkersRef = useRef<any[]>([]);
+    const stopMarkersRef = useRef<any[]>([]);
+    const routeMarkersRef = useRef<any[]>([]);
+    const polylineRef = useRef<any>(null);
 
     // 👉 almacena el path calculado por Google Directions
     const [directionsPath, setDirectionsPath] = useState<LatLng[] | null>(null);

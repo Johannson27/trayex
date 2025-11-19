@@ -13,6 +13,11 @@
     },
     "android": {
       "package": "com.trayex.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDeNsgrwL0dfknB6A_v5LrcHGwqJyh8nYE" 
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -44,6 +49,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "df95f1a0-f245-4a19-a33d-f3d5be0cc7e0"
+      }
     }
   }
 }

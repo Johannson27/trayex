@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import { prisma } from "./prisma";
-
+import { pushRouter } from "./routes/push";
 import authRouter from "./routes/auth"; 
 import  passRouter  from "./routes/pass";            // <= FALTABAAAA
 import { reservationRouter } from "./routes/reservations";
@@ -33,7 +33,7 @@ app.use(routesRouter);         // /routes
 app.use(reservationRouter);    // /reservations, /me/reservations (según lo tengas)
 app.use(zonesRouter);          // /zones, /zones/:id/stops, /zones/:id/timeslots
 app.use(notificationsRouter);  // /me/notifications, /notifications/:id/read, etc.
-
+app.use("/push", pushRouter);
 app.get("/health", (_req, res) => res.status(200).send("ok"));
 
 

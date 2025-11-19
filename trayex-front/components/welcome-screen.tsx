@@ -29,7 +29,7 @@ export function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
     <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
       {/* Fondo a pantalla completa */}
       <Image
-        src="/assets/bg-register-student.jpg"
+        src="/assets/bg-dashboard.jpg"
         alt="Fondo bienvenida Trayex"
         fill
         priority
@@ -47,9 +47,6 @@ export function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
             height={80}
             className="drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]"
           />
-          <p className="text-[13px] text-white/90 tracking-[0.12em]">
-            Trayectoria y Exactitud
-          </p>
         </header>
 
         {/* Spacer para empujar la tarjeta hacia abajo */}

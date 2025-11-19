@@ -1,10 +1,11 @@
 {
-    "name": "TRAYEX",
-    "short_name": "TRAYEX",
+    "name": "Trayex",
+    "short_name": "Trayex",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#204284",
+    "background_color": "#153fba",
+    "theme_color": "#153fba",
+    "description": "Reserva tu ruta universitaria y paga desde tu celular.",
     "icons": [
         {
             "src": "/icons/icon-192.png",

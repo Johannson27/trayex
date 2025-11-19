@@ -14,6 +14,9 @@ import { getUser, saveUser, getToken } from "@/lib/session"
 import { getMe } from "@/lib/api"
 import { StudentBottomNav, type TabId } from "@/components/student-bottom-nav"
 import { FaresScreen } from "@/components/fares-screen"
+import { reverseGeocode } from "@/lib/reverse-geocode"
+import { fetchNearbyStops } from "@/lib/fetch-stops"
+import { useLocation } from "@/hooks/useLocation"
 
 type DashboardScreenProps = {
   userRole: UserRole
@@ -78,6 +81,24 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         // ignoramos error, usamos lo que haya en localStorage
       })
   }, [])
+  const [search, setSearch] = useState("");
+
+  const { position, loading } = useLocation();
+  const [district, setDistrict] = useState("Cargando...");
+  const [nearbyStops, setNearbyStops] = useState<any[]>([]);
+  useEffect(() => {
+    if (!position) return;
+
+    reverseGeocode(position.lat, position.lon).then((name) => {
+      setDistrict(name);
+
+      // 🔵 GUARDAR UBICACIÓN ACTUAL PARA LAS RESERVAS
+      localStorage.setItem("currentUserLocation", name);
+    });
+
+    const stops = fetchNearbyStops(position.lat, position.lon)
+    setNearbyStops(stops);
+  }, [position]);
 
   const displayName = useMemo(() => {
     const full = user?.student?.fullName || user?.student?.fullname
@@ -117,18 +138,16 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     if (activeNav === "routes") {
       return (
         <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent">
-          <RoutesScreen
-            onReserveRoute={handleReserveRoute}
-            onPlannedTrip={() => { }}
-          />
+          <RoutesScreen setActiveNav={setActiveNav} />
         </div>
       )
     }
 
+
     if (activeNav === "fares") {
       return (
         <div className="relative z-10 min-h-[calc(100vh-80px)] bg-background">
-          <FaresScreen />
+          <FaresScreen key={Date.now()} setActiveNav={setActiveNav} />
         </div>
       )
     }
@@ -136,7 +155,8 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
     if (activeNav === "pass") {
       return (
         <div className="relative z-10 min-h-[calc(100vh-80px)] bg-transparent">
-          <PassesScreen />
+          <PassesScreen key={Date.now()} setActiveNav={setActiveNav} />
+
         </div>
       )
     }
@@ -168,8 +188,9 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
                 <MapPin className="w-3 h-3 text-white" />
               </div>
               <span className="text-sm font-medium text-slate-800">
-                Bolonia
+                {district}
               </span>
+
               <ChevronDown className="w-4 h-4 text-slate-500" />
             </button>
 
@@ -199,30 +220,29 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
           </div>
 
           {/* BUSCADOR */}
-          <div className="mt-1">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Busca un bus en específico"
-                className="w-full h-12 rounded-full bg-[#f5f6fb] pl-5 pr-12 text-sm border border-transparent focus:border-[#C3C8F5] focus:outline-none focus:ring-2 focus:ring-[#C3C8F5]/60"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br from-[#C8C3F8] via-[#E1C7F8] to-[#F4D0F8] flex items-center justify-center shadow-md">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-4 h-4 text-[#5A4EA3]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"
-                  />
-                </svg>
-              </div>
-            </div>
+          {/* BUSCAR RUTA */}
+          <div className="mt-1 px-1">
+            <button
+              onClick={() => setActiveNav("routes")}
+              className="w-full h-12 rounded-full bg-[#f5f6fb] hover:bg-[#eceffd] transition text-sm font-medium text-slate-800 shadow flex items-center justify-center gap-2 border border-transparent"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-5 h-5 text-[#5A4EA3]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+
+              Buscar una ruta
+            </button>
           </div>
 
           {/* PARADAS CERCANAS */}
@@ -232,29 +252,48 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
             </h2>
 
             <div className="flex gap-3 overflow-x-auto pb-1">
-              {[1, 2, 3].map((n) => (
+              {nearbyStops.length === 0 && (
+                <p className="text-xs text-slate-500">Buscando paradas cercanas...</p>
+              )}
+
+              {nearbyStops.slice(0, 3).map((stop, i) => (
                 <div
-                  key={n}
+                  key={i}
                   className="min-w-[120px] max-w-[130px] bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden"
                 >
                   <div className="relative w-full h-20">
                     <Image
-                      src="/assets/dashboard-hero.jpg"
-                      alt={`Parada ${n}`}
+                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${stop.lat},${stop.lon}&zoom=16&size=200x200&markers=color:blue|${stop.lat},${stop.lon}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                      alt={`Parada ${i + 1}`}
                       fill
                       className="object-cover"
                     />
+
+
+
+
                   </div>
+
                   <div className="px-3 py-2 space-y-1">
                     <p className="text-xs font-semibold text-slate-900">
-                      {`Parada ${n}`}
+                      Parada {i + 1}
                     </p>
-                    <button className="w-full h-7 rounded-full bg-slate-900 text-[11px] font-medium text-white">
+
+                    <button
+                      onClick={() => {
+                        window.open(
+                          `https://www.google.com/maps/?q=${stop.lat},${stop.lon}`,
+                          "_blank"
+                        )
+                      }}
+                      className="w-full h-7 rounded-full bg-slate-900 text-[11px] font-medium text-white"
+                    >
                       Ver
                     </button>
                   </div>
                 </div>
               ))}
+
             </div>
           </div>
         </div>
@@ -276,17 +315,21 @@ export function DashboardScreen({ userRole }: DashboardScreenProps) {
         />
 
         {/* Contenido (dejamos espacio para la navbar) */}
-        <div className="relative z-10 pb-24">{renderContent()}</div>
+        <div className="relative z-10 pb-20">
+          {renderContent()}
+        </div>
 
         {/* Navbar siempre visible */}
-        <StudentBottomNav
-          active={tabFromNav(activeNav)}
-          onChange={(tab) => {
-            const newNav = navFromTab(tab)
-            setTripInProgress(null) // por si quieres salir del estado viaje al tocar otra pestaña
-            setActiveNav(newNav)
-          }}
-        />
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50">
+          <StudentBottomNav
+            active={tabFromNav(activeNav)}
+            onChange={(tab) => {
+              const newNav = navFromTab(tab)
+              setTripInProgress(null)
+              setActiveNav(newNav)
+            }}
+          />
+        </div>
       </div>
     </div>
   )

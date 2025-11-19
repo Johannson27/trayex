@@ -1,172 +1,264 @@
-// src/components/routes-screen.tsx
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { MapPin, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
-export type StopRow = {
+interface University {
+  placeId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  address: string;
+  photo: string | null;
+}
+
+interface Stop {
   id: string;
   name: string;
   lat: number;
   lng: number;
-  isSafe: boolean;
-};
-
-export type RouteRow = {
-  id: string;
-  name: string;
-  description: string | null;
-  mainStops: string[];
-  status: "ACTIVE" | "SAFE" | "INCIDENT";
-  estimatedTime: string;
-  capacity: string;
-  isFavorite: boolean;
-  stops?: StopRow[];
-  shape?: { lat: number; lng: number }[];
-};
-
-interface RoutesScreenProps {
-  onReserveRoute?: (routeName: string) => void;
-  onPlannedTrip?: (payload: {
-    routeId: string;
-    from: { lat: number; lng: number; name?: string };
-    to: { lat: number; lng: number; name?: string };
-    stopsToShow: { lat: number; lng: number; name?: string }[];
-    path: { lat: number; lng: number }[];
-  }) => void;
 }
 
-/**
- * Diseño nuevo de "Rutas":
- * - Zona superior: mapa (luego reemplazas el placeholder con Google Maps).
- * - Barra de búsqueda flotando arriba.
- * - Tarjeta de "Mi parada: Central" con foto y datos.
- * - Botón que dispara onReserveRoute("Ruta 117") para ir al Estado de viaje.
- */
-export function RoutesScreen({ onReserveRoute, onPlannedTrip }: RoutesScreenProps) {
-  const handleSelectStop = () => {
-    // 👉 Esto dispara tu TripInProgressScreen (Estado del viaje)
-    onReserveRoute?.("Ruta 117");
+export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<google.maps.Map | null>(null);
 
-    // 👉 Si quieres que también pinte algo en el mapa del dashboard,
-    // mandamos un payload de ejemplo a onPlannedTrip
-    onPlannedTrip?.({
-      routeId: "ruta-117",
-      from: {
-        lat: 12.1365,
-        lng: -86.2515,
-        name: "Mi parada: Central",
-      },
-      to: {
-        lat: 12.1405,
-        lng: -86.255,
-        name: "Destino de ejemplo",
-      },
-      stopsToShow: [],
-      path: [],
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [filtered, setFiltered] = useState<University[]>([]);
+  const [selected, setSelected] = useState<University | null>(null);
+  const [search, setSearch] = useState("");
+
+  const [stops, setStops] = useState<Stop[]>([]);
+
+  // 🟦 1. CARGAR PARADAS
+  useEffect(() => {
+    fetch("/managua-stops.json")
+      .then((res) => res.json())
+      .then((data) => setStops(data));
+  }, []);
+
+  // 🟦 2. BÚSQUEDA UNIVERSIDADES
+  useEffect(() => {
+    if (search.trim().length < 2) {
+      setFiltered([]);
+      return;
+    }
+
+    async function load() {
+      const res = await fetch(`/api/universities?query=${search}`);
+      const json = await res.json();
+      setUniversities(json.universities || []);
+      setFiltered(json.universities || []);
+    }
+
+
+    load();
+  }, [search]);
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      localStorage.setItem("currentUserLocation", JSON.stringify({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        name: "Ubicación del usuario"
+      }));
     });
-  };
+  }, []);
+  // 🟦 3. INICIALIZAR MAPA
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    mapInstance.current = new google.maps.Map(mapRef.current, {
+      center: { lat: 12.136389, lng: -86.251389 },
+      zoom: 13,
+      disableDefaultUI: true,
+      gestureHandling: "greedy",
+    });
+  }, []);
+
+  // 🟦 4. MOSTRAR TODAS LAS PARADAS SIEMPRE
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    async function loadStops() {
+      const res = await fetch("/managua-stops.json");
+      const stops = await res.json();
+
+      stops.forEach((stop: any) => {
+        new google.maps.Marker({
+          map: mapInstance.current!,
+          position: { lat: stop.lat, lng: stop.lng },
+          icon: {
+            url: "/assets/parada.png",
+            scaledSize: new google.maps.Size(32, 32),
+          },
+        });
+      });
+    }
+
+    loadStops();
+  }, [mapInstance.current]);
+
+  // 🟦 5. SELECCIONAR UNIVERSIDAD → ZOOM + MARKER
+  useEffect(() => {
+    if (!selected || !mapInstance.current) return;
+
+    const map = mapInstance.current;
+
+    map.panTo({ lat: selected.lat, lng: selected.lng });
+    map.setZoom(17);
+
+    // Remover marker previo
+    if ((window as any).__uniMarker) {
+      (window as any).__uniMarker.setMap(null);
+    }
+
+    (window as any).__uniMarker = new google.maps.Marker({
+      map,
+      position: { lat: selected.lat, lng: selected.lng },
+      icon: {
+        url: "/assets/universidad.png",
+        scaledSize: new google.maps.Size(40, 40),
+      },
+    });
+  }, [selected]);
+
+  // 🟦 6. RUTA DESDE PARADA MÁS CERCANA
+  useEffect(() => {
+    if (!selected || !mapInstance.current) return;
+
+    async function draw() {
+      const res = await fetch("/managua-stops.json");
+      const stops = await res.json();
+
+      // hallar parada más cercana
+      let nearest: any = null;
+      let minDist = Infinity;
+
+      stops.forEach((stop: any) => {
+        const d =
+          Math.sqrt(
+            Math.pow(stop.lat - selected!.lat, 2) +
+            Math.pow(stop.lng - selected!.lng, 2)
+          );
+
+        if (d < minDist) {
+          minDist = d;
+          nearest = stop;
+        }
+      });
+
+      if (!nearest) return;
+
+      // dibujar ruta
+      const directions = new google.maps.DirectionsService();
+      const renderer = new google.maps.DirectionsRenderer({
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: "#0B5FFF",
+          strokeWeight: 5,
+        },
+      });
+
+      renderer.setMap(mapInstance.current!);
+
+      directions.route(
+        {
+          origin: { lat: nearest.lat, lng: nearest.lng },
+          destination: { lat: selected!.lat, lng: selected!.lng },
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result) => renderer.setDirections(result)
+      );
+    }
+
+    draw();
+  }, [selected]);
 
   return (
-    <div className="flex-1 flex justify-center bg-[#F3F4F6]">
-      <div className="w-full max-w-md px-4 pt-6 pb-24">
+    <div className="relative w-full max-w-md mx-auto min-h-screen bg-white">
 
-        {/* === CONTENEDOR MAPA + BUSCADOR === */}
-        <div className="relative w-full">
-          {/* Mapa (aquí luego pones Google Maps) */}
-          <div className="h-[320px] rounded-3xl overflow-hidden shadow-md bg-slate-200 relative">
-            {/* 🔁 Placeholder: reemplaza este div por tu componente de Google Maps */}
-            <div id="routes-map" className="w-full h-full">
-              <Image
-                src="/assets/bg-routes-map.jpg" // o cambia por el nombre que tengas
-                alt="Mapa de paradas"
-                fill
-                className="object-cover"
-              />
-            </div>
+      {/* ▪️ Mapa */}
+      <div ref={mapRef} className="absolute inset-0 w-full h-full" />
 
-            {/* Pin amarillo en el centro */}
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="w-11 h-11 rounded-full bg-[#FFC933] shadow-lg flex items-center justify-center">
-                <div className="w-4 h-4 rounded-full bg-white" />
-              </div>
-            </div>
-          </div>
-
-          {/* Barra de búsqueda flotando ligeramente SOBRE el mapa */}
-          <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-[88%]">
-            <div className="bg-white shadow-lg rounded-full px-4 h-12 flex items-center gap-2">
-              <Search className="w-4 h-4 text-gray-500" />
-              <input
-                type="text"
-                placeholder="Busca una dirección"
-                className="flex-1 bg-transparent outline-none text-sm placeholder:text-gray-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* SEPARACIÓN ENTRE MAPA Y TARJETA */}
-        <div className="h-7" />
-
-        {/* === TARJETA "MI PARADA: CENTRAL" === */}
-        <div className="w-full">
-          <button
-            onClick={handleSelectStop}
-            className="w-full text-left rounded-3xl bg-white shadow-[0_18px_40px_rgba(0,0,0,0.18)] overflow-hidden transition-all duration-300 hover:shadow-[0_22px_50px_rgba(0,0,0,0.25)] hover:-translate-y-1 active:translate-y-0 active:scale-[0.99]"
-          >
-            {/* Foto de la parada */}
-            <div className="relative w-full h-[150px]">
-              <Image
-                src="/assets/dashboard-hero.jpg" // exporta esta imagen con este nombre
-                alt="Parada de buses"
-                fill
-                className="object-cover"
-              />
-            </div>
-
-            {/* Contenido */}
-            <div className="px-5 pt-4 pb-4">
-              <h3 className="font-semibold text-lg text-slate-900">
-                Mi parada: Central
-              </h3>
-
-              <p className="text-xs mt-1 flex items-center gap-1 text-gray-600">
-                <MapPin className="w-3 h-3 text-[#FFC933]" />
-                123 Anywhere st. Any city, ST 12345
-              </p>
-
-              <div className="mt-4">
-                <p className="text-sm font-semibold text-slate-900 mb-1">
-                  Buses que llegan
-                </p>
-
-                <div className="text-sm space-y-1">
-                  <p>
-                    <span className="text-blue-600 font-bold">A</span>{" "}
-                    Bus 123
-                  </p>
-                  <p>
-                    <span className="text-red-600 font-bold">B</span>{" "}
-                    Bus 111
-                  </p>
-                  <p>
-                    <span className="text-green-600 font-bold">$</span>{" "}
-                    C$: 2.50
-                  </p>
-                </div>
-              </div>
-
-              {/* Botón para ir al Estado del viaje */}
-              <div className="mt-5">
-                <div className="w-full h-[44px] rounded-[999px] bg-gradient-to-r from-[#FFC933] via-[#F6A33A] to-[#F27C3A] flex items-center justify-center text-white text-sm font-semibold shadow-[0_14px_28px_rgba(0,0,0,0.25)]">
-                  Ver estado del viaje
-                </div>
-              </div>
-            </div>
-          </button>
+      {/* ▪️ Buscador */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[88%] z-20">
+        <div className="bg-white rounded-full shadow-lg px-4 h-12 flex items-center gap-2">
+          <Search className="w-4 h-4 text-gray-500" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar universidad"
+            className="flex-1 text-sm bg-transparent outline-none"
+          />
         </div>
       </div>
+
+      {/* ▪️ Lista */}
+      {!selected && (
+        <div className="absolute top-24 w-full px-4 pb-32 space-y-3 z-20">
+          {filtered.map((u) => (
+            <button
+              key={u.placeId}
+              onClick={() => setSelected(u)}
+              className="bg-white w-full rounded-2xl shadow-md p-3 flex gap-3 items-center"
+            >
+              <Image
+                src={u.photo || "/assets/parada.png"}
+                width={70}
+                height={70}
+                alt="Foto"
+                className="rounded-lg object-cover"
+              />
+              <div className="text-left">
+                <p className="font-semibold text-slate-800">{u.name}</p>
+                <p className="text-xs text-gray-500">{u.address}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ▪️ Tarjeta inferior */}
+      {selected && (
+        <div className="absolute bottom-20 left-0 right-0 px-4 z-30">
+          <div
+            className="bg-white rounded-3xl shadow-xl overflow-hidden cursor-pointer"
+            onClick={() => {
+              localStorage.setItem("selectedUniversity", JSON.stringify(selected));
+              setActiveNav("pass");
+            }}
+          >
+            <div className="relative h-40 w-full">
+              <Image
+                src={selected.photo || "/assets/parada.png"}
+                alt="Foto"
+                fill
+                className="object-cover"
+              />
+            </div>
+
+            <div className="p-4">
+              <h2 className="text-lg font-semibold text-slate-900">
+                {selected.name}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">{selected.address}</p>
+
+              <button className="mt-3 w-full py-2 rounded-full bg-slate-900 text-white text-sm">
+                Reservar aquí →
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setSelected(null)}
+            className="text-white mt-2 text-center underline"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

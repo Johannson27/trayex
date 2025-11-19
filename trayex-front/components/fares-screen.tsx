@@ -1,133 +1,62 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import Image from "next/image"
-import QRCode from "react-qr-code"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import TrayexQR from "@/components/TrayexQR";
 import {
-    CreditCard,
     Bus,
     QrCode as QrIcon,
     ArrowRight,
     Calendar,
-    Clock,
-} from "lucide-react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+    Clock
+} from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-import { getPassQR, rotatePassQR } from "@/lib/api"
-import { getToken } from "@/lib/session"
+import { getPassQR } from "@/lib/api";
+import { getToken } from "@/lib/session";
 
-type Payment = {
-    id: string
-    route: string
-    description: string
-    date: string
-    time: string
-    amount: string
-}
+export function FaresScreen({ setActiveNav }: { setActiveNav: any }) {
+    const token = getToken();
 
-const MOCK_BALANCE = "C$ 172.50"
-
-const LAST_PASS = {
-    route: "Ruta 164",
-    time: "6:09 a. m.",
-    from: "Universidad Americana",
-    to: "Mercado Roberto Huembes",
-    price: "C$ 2.50",
-}
-
-const MOCK_HISTORY: Payment[] = [
-    {
-        id: "1",
-        route: "Ruta 164",
-        description: "Pase completado",
-        date: "Hoy",
-        time: "6:09 a. m.",
-        amount: "- C$ 2.50",
-    },
-    {
-        id: "2",
-        route: "Ruta 111",
-        description: "Pase completado",
-        date: "Ayer",
-        time: "6:25 a. m.",
-        amount: "- C$ 2.50",
-    },
-    {
-        id: "3",
-        route: "Ruta 06",
-        description: "Pase completado",
-        date: "Ayer",
-        time: "6:39 a. m.",
-        amount: "- C$ 2.50",
-    },
-]
-
-const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, "0")}:${secs
-        .toString()
-        .padStart(2, "0")}`
-}
-
-export function FaresScreen() {
-    // ==== QR DINÁMICO (misma lógica que PassScreen) ====
-    const token = getToken()
-    const [qrValidTime, setQrValidTime] = useState(30)
-    const [qrValue, setQrValue] = useState<string | null>(null)
-    const [rotating, setRotating] = useState(false)
-    const [showFullPass, setShowFullPass] = useState(false)
-
-    const fetchFirstQR = useCallback(async () => {
-        if (!token) return
-        try {
-            const { qr } = await getPassQR(token)
-            setQrValue(qr)
-            setQrValidTime(30)
-        } catch {
-            setQrValue(null)
-        }
-    }, [token])
-
-    const rotateQR = useCallback(async () => {
-        if (!token || rotating) return
-        try {
-            setRotating(true)
-            const { qr } = await rotatePassQR(token)
-            setQrValue(qr)
-            setQrValidTime(30)
-        } catch {
-            // si falla, dejamos el anterior
-        } finally {
-            setRotating(false)
-        }
-    }, [token, rotating])
+    const [reservation, setReservation] = useState<any>(null);
+    const [history, setHistory] = useState<any[]>([]);
+    const [qrValue, setQrValue] = useState<string | null>(null);
+    const [showFullPass, setShowFullPass] = useState(false);
 
     useEffect(() => {
-        fetchFirstQR()
-    }, [fetchFirstQR])
+        const storedRes = localStorage.getItem("latestReservation");
+        if (storedRes) setReservation(JSON.parse(storedRes));
+
+        const storedHistory = localStorage.getItem("history");
+        setHistory(storedHistory ? JSON.parse(storedHistory) : []);
+    }, []);
 
     useEffect(() => {
-        const t = setInterval(() => {
-            setQrValidTime((prev) => {
-                if (prev <= 1) {
-                    rotateQR()
-                    return 30
-                }
-                return prev - 1
-            })
-        }, 1000)
-        return () => clearInterval(t)
-    }, [rotateQR])
+        async function loadQR() {
+            if (!token) return;
 
-    const isExpiring = !!qrValue && qrValidTime <= 5
+            try {
+                const { qr } = await getPassQR(token);
+                setQrValue(qr);
+            } catch {
+                setQrValue(null);
+            }
+        }
+        loadQR();
+    }, [token]);
 
-    // ==== UI ====
+    if (!reservation) {
+        return (
+            <div className="flex items-center justify-center min-h-[calc(100vh-80px)] text-white">
+                No tienes reservas aún.
+            </div>
+        );
+    }
+
     return (
         <div className="relative min-h-[calc(100vh-80px)] px-5 pt-8 pb-4">
-            {/* Fondo igual al dashboard */}
             <Image
                 src="/assets/bg-dashboard.jpg"
                 alt="Fondo Trayex"
@@ -137,111 +66,109 @@ export function FaresScreen() {
             />
 
             <div className="relative z-10">
-                {/* Título */}
+
+                {/* HEADER */}
                 <div className="mb-4">
                     <h1 className="text-xl font-semibold text-white drop-shadow">
                         Pago
                     </h1>
                     <p className="text-xs text-white/80 drop-shadow">
-                        Revisa tu saldo, tu último pase y el historial de pagos.
+                        Aquí está tu pase activo y tu historial.
                     </p>
                 </div>
 
-                {/* CARD SUPERIOR: saldo disponible */}
+                {/* SALDO */}
                 <Card className="rounded-3xl px-5 py-4 mb-4 shadow-[0_16px_40px_rgba(0,0,0,0.30)] border-none bg-white/98">
                     <div className="flex items-start justify-between gap-4">
                         <div className="space-y-1">
-                            <p className="text-xs text-slate-500 font-medium">
-                                Saldo disponible
-                            </p>
-                            <p className="text-2xl font-bold text-slate-900">
-                                {MOCK_BALANCE}
-                            </p>
+                            <p className="text-xs text-slate-500">Saldo disponible</p>
+                            <p className="text-2xl font-bold">C$ 172.50</p>
                             <p className="text-[11px] text-slate-400">
                                 Usa tu saldo para pagar tus rutas automáticamente.
                             </p>
                         </div>
+
                         <div className="flex flex-col items-end gap-2">
-                            <Button
-                                size="sm"
-                                className="h-8 rounded-full px-4 text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800"
-                                type="button"
-                                onClick={() => alert("Aquí va la lógica para recargar saldo")}
+                            <button
+                                className="h-8 rounded-full px-4 text-xs font-semibold bg-slate-900 text-white"
+                                onClick={() => alert("Lógica de recarga próximamente")}
                             >
                                 Recargar
-                            </Button>
+                            </button>
+
                             <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                                <CreditCard className="w-3 h-3" />
+                                <Image src="/assets/tarjeta.png" width={14} height={14} alt="" />
                                 <span>Tarjeta vinculada</span>
                             </div>
                         </div>
                     </div>
                 </Card>
 
-                {/* CARD MEDIO: último pase + QR (dinámico) */}
+                {/* PASE ACTIVO */}
                 <Card className="rounded-3xl px-5 py-4 mb-5 shadow-[0_16px_40px_rgba(0,0,0,0.30)] border-none bg-white/98">
                     <div className="flex items-start justify-between gap-4">
-                        {/* info izquierda */}
+
                         <div className="flex-1 space-y-1">
-                            <p className="text-[11px] text-slate-500 font-medium">
-                                Pase para
-                            </p>
-                            <p className="text-base font-semibold text-slate-900 flex items-center gap-1">
-                                {LAST_PASS.route}
+                            <p className="text-[11px] text-slate-500">Pase para</p>
+
+                            <p className="text-base font-semibold flex items-center gap-1">
+                                Ruta {reservation.route}
                                 <Badge className="rounded-full text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-none">
                                     Activo
                                 </Badge>
                             </p>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1">
+
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
                                 <Clock className="w-3 h-3" />
-                                <span>{LAST_PASS.time}</span>
+                                <span>
+                                    {new Date(reservation.timestamp).toLocaleTimeString(
+                                        "es-NI",
+                                        { hour: "numeric", minute: "2-digit" }
+                                    )}
+                                </span>
                             </div>
 
                             <div className="mt-2 space-y-1 text-[11px] text-slate-600">
                                 <p className="flex items-start gap-1.5">
                                     <span className="mt-[2px] text-xs">A</span>
-                                    <span>{LAST_PASS.from}</span>
+                                    <span>{reservation.origin}</span>
                                 </p>
+
                                 <p className="flex items-start gap-1.5">
                                     <span className="mt-[2px] text-xs">B</span>
-                                    <span>{LAST_PASS.to}</span>
+                                    <span>{reservation.destination}</span>
                                 </p>
+
                                 <p className="flex items-start gap-1.5">
                                     <span className="mt-[2px] text-xs">$</span>
-                                    <span>{LAST_PASS.price}</span>
+                                    <span>{reservation.price}</span>
                                 </p>
                             </div>
 
-                            {qrValue && (
-                                <p className="mt-2 text-[10px] text-slate-400">
-                                    QR dinámico · expira en {formatTime(qrValidTime)}
+                            {!qrValue && (
+                                <p className="text-[10px] mt-2 text-slate-400">
+                                    Obteniendo QR…
                                 </p>
                             )}
                         </div>
 
-                        {/* QR derecha (clicable) */}
-                        <div className="w-[92px] flex flex-col items-center gap-2">
+                        {/* SOLO QR (sin logo extra) */}
+                        <div className="w-[92px] flex flex-col items-center gap-3">
                             <button
-                                type="button"
                                 onClick={() => qrValue && setShowFullPass(true)}
-                                className="w-[82px] h-[82px] rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden relative"
+                                className="w-[82px] h-[82px] rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center"
                             >
                                 {qrValue ? (
-                                    <>
-                                        <QRCode value={qrValue} size={70} />
-                                        {isExpiring && (
-                                            <div className="absolute inset-0 rounded-2xl border-2 border-yellow-400 animate-pulse pointer-events-none" />
-                                        )}
-                                    </>
+                                    <TrayexQR value={qrValue} size={70} />
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center text-[10px] text-slate-400">
+                                    <div className="flex flex-col items-center text-[10px] text-slate-400">
                                         <QrIcon className="w-4 h-4 mb-1" />
-                                        Obteniendo QR…
+                                        Obteniendo…
                                     </div>
                                 )}
                             </button>
+
                             <button
-                                type="button"
                                 className="text-[10px] text-blue-600 font-semibold flex items-center gap-1"
                                 onClick={() => qrValue && setShowFullPass(true)}
                             >
@@ -252,49 +179,39 @@ export function FaresScreen() {
                     </div>
                 </Card>
 
-                {/* HISTORIAL DE PAGOS */}
+                {/* HISTORIAL */}
                 <Card className="rounded-3xl px-5 py-4 shadow-[0_12px_30px_rgba(0,0,0,0.22)] border-none bg-white/98">
-                    <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-semibold text-slate-900">
-                            Historial de pagos
-                        </p>
-                        <button
-                            type="button"
-                            className="text-[11px] text-blue-600 font-semibold flex items-center gap-1"
-                            onClick={() => alert("Aquí podrías abrir un historial completo")}
-                        >
-                            Ver todo
-                            <ArrowRight className="w-3 h-3" />
-                        </button>
-                    </div>
+                    <p className="text-sm font-semibold mb-3">Historial</p>
 
-                    <div className="space-y-2">
-                        {MOCK_HISTORY.map((p) => (
+                    {history.length === 0 && (
+                        <p className="text-xs text-slate-500">Aún no tienes historial.</p>
+                    )}
+
+                    <div className="max-h-64 overflow-y-auto pr-2">
+                        {history.map((h) => (
                             <div
-                                key={p.id}
-                                className="flex items-center justify-between py-2 border-b last:border-b-0 border-slate-100"
+                                key={h.id}
+                                className="flex items-center justify-between py-2 border-b border-slate-100"
                             >
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                                        <Bus className="w-4 h-4 text-blue-600" />
-                                    </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-xs font-semibold text-slate-900">
-                                            {p.route}
-                                        </p>
-                                        <p className="text-[11px] text-slate-500">
-                                            {p.description}
-                                        </p>
-                                        <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />
-                                            <span>{p.date}</span>
-                                            <span className="mx-1">•</span>
-                                            <span>{p.time}</span>
-                                        </p>
-                                    </div>
+                                <div>
+                                    <p className="text-xs font-semibold">Ruta {h.route}</p>
+
+                                    <p className="text-[11px] text-slate-500">
+                                        {h.origin} → {h.destination}
+                                    </p>
+
+                                    <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        {new Date(h.timestamp).toLocaleDateString("es-NI")} •{" "}
+                                        {new Date(h.timestamp).toLocaleTimeString("es-NI", {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                        })}
+                                    </p>
                                 </div>
+
                                 <p className="text-xs font-semibold text-rose-500">
-                                    {p.amount}
+                                    - {h.price}
                                 </p>
                             </div>
                         ))}
@@ -302,105 +219,62 @@ export function FaresScreen() {
                 </Card>
             </div>
 
-            {/* OVERLAY: Pase grande con mismo QR */}
+            {/* MODAL QR GRANDE */}
             {showFullPass && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                    className="fixed inset-0 z-50 bg-black/60 flex justify-center items-center"
                     onClick={() => setShowFullPass(false)}
                 >
                     <div
-                        className="relative w-full max-w-md h-full max-h-[760px] mx-auto rounded-none sm:rounded-3xl overflow-hidden"
+                        className="relative w-full max-w-md h-full max-h-[780px] bg-white/95"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Fondo azul / ondas (mismo que dashboard) */}
                         <Image
                             src="/assets/bg-dashboard.jpg"
-                            alt="Fondo Pase"
+                            alt="Fondo"
                             fill
                             className="object-cover"
                         />
 
-                        {/* Contenido */}
-                        <div className="relative z-10 flex flex-col h-full px-5 pt-6 pb-6">
+                        <div className="relative z-10 h-full flex flex-col px-5 pt-6 pb-6">
+
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-white text-xl font-semibold drop-shadow">
-                                    Pase
-                                </h2>
+                                <h2 className="text-white text-xl font-semibold">Pase</h2>
+
                                 <button
-                                    type="button"
-                                    className="text-white text-sm px-3 py-1 rounded-full bg-white/20 hover:bg-white/30"
+                                    className="text-white text-sm bg-white/20 px-3 py-1 rounded-full"
                                     onClick={() => setShowFullPass(false)}
                                 >
                                     Cerrar
                                 </button>
                             </div>
 
-                            {/* Tarjeta blanca con el QR grande */}
-                            <div className="flex-1 flex items-center justify-center">
-                                <Card className="w-full rounded-[32px] px-6 pt-6 pb-6 bg-white/98 border-none shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
-                                    {/* Logo arriba */}
-                                    <div className="flex flex-col items-center gap-1 mb-3">
-                                        <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
-                                            <Image
-                                                src="/icons/icon-192.png"
-                                                alt="Trayex"
-                                                width={40}
-                                                height={40}
-                                            />
-                                        </div>
-                                        <p className="text-[11px] text-slate-500">
-                                            Pasaje para {LAST_PASS.route}
-                                        </p>
-                                        <p className="text-[11px] text-slate-500">
-                                            {LAST_PASS.time} · ☀️
-                                        </p>
-                                    </div>
+                            <Card className="flex-1 rounded-[32px] px-6 py-6 bg-white/95 shadow-xl border-none">
+                                <div className="flex justify-center mb-4">
+                                    <TrayexQR value={qrValue || ""} size={190} />
+                                </div>
 
-                                    {/* QR grande */}
-                                    <div className="flex items-center justify-center mb-4">
-                                        <div className="bg-white p-3 rounded-2xl shadow-inner relative">
-                                            {qrValue ? (
-                                                <>
-                                                    <QRCode value={qrValue} size={190} />
-                                                    {isExpiring && (
-                                                        <div className="absolute -inset-2 rounded-2xl border-4 border-yellow-400 animate-pulse pointer-events-none" />
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <div className="w-[190px] h-[190px] flex flex-col items-center justify-center text-slate-400">
-                                                    <QrIcon className="w-10 h-10 mb-2" />
-                                                    <p className="text-xs">Obteniendo código…</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                <div className="text-[12px] text-slate-700 space-y-1">
+                                    <p className="flex gap-2">
+                                        <span className="font-semibold">A</span>
+                                        {reservation.origin}
+                                    </p>
 
-                                    {/* Info A / B */}
-                                    <div className="space-y-1 text-[12px] text-slate-700">
-                                        <p className="flex items-start gap-2">
-                                            <span className="font-semibold">A</span>
-                                            <span>{LAST_PASS.from}</span>
-                                        </p>
-                                        <p className="flex items-start gap-2">
-                                            <span className="font-semibold">B</span>
-                                            <span>{LAST_PASS.to}</span>
-                                        </p>
-                                        <p className="flex items-start gap-2">
-                                            <span className="font-semibold">$</span>
-                                            <span>{LAST_PASS.price}</span>
-                                        </p>
-                                    </div>
+                                    <p className="flex gap-2">
+                                        <span className="font-semibold">B</span>
+                                        {reservation.destination}
+                                    </p>
 
-                                    {/* Indicador verde abajo derecha */}
-                                    <div className="mt-4 flex justify-end">
-                                        <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                                    </div>
-                                </Card>
-                            </div>
+                                    <p className="flex gap-2">
+                                        <span className="font-semibold">$</span>
+                                        {reservation.price}
+                                    </p>
+                                </div>
+                            </Card>
                         </div>
                     </div>
                 </div>
             )}
         </div>
-    )
+    );
 }

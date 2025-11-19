@@ -87,3 +87,4 @@ notificationsRouter.post("/notifications/read-all", requireAuth, async (req, res
 
     res.json({ ok: true });
 });
+

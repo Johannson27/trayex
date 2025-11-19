@@ -1,131 +1,97 @@
-// src/app/page.tsx
 "use client";
 
 import { useState } from "react";
+
+import { AccessIntroScreen } from "@/components/access-intro-screen";
 import { WelcomeScreen } from "@/components/welcome-screen";
 import { LoginScreen } from "@/components/login-screen";
 import { RegisterStudentScreen } from "@/components/register-student-screen";
 import { RegisterDriverScreen } from "@/components/register-driver-screen";
-import { OnboardingVideoScreen } from "@/components/onboarding-video-screen";
 import { DashboardScreen } from "@/components/dashboard-screen";
-import { hasSeenIntro, markIntroSeen } from "@/lib/intro";
 import { getUser } from "@/lib/session";
 
 export type Screen =
+    | "access-intro"
     | "welcome"
     | "login"
     | "register-student"
     | "register-driver"
-    | "onboarding"
     | "dashboard";
 
 export type UserRole = "student" | "driver" | null;
 
-export default function Home() {
-    // ahora sí empieza en "welcome"
-    const [currentScreen, setCurrentScreen] = useState<Screen>("welcome");
-
+export default function AppRoot() {
+    const [currentScreen, setCurrentScreen] = useState<Screen>("access-intro");
     const [userRole, setUserRole] = useState<UserRole>(null);
-    const [userId, setUserId] = useState<string | null>(null);
+
+    const goTo = (screen: Screen, role?: UserRole | null) => {
+        if (role !== undefined) {
+            setUserRole(role);
+        }
+        setCurrentScreen(screen);
+    };
 
     return (
-        <main className="min-h-screen bg-background overflow-hidden">
+        <main className="min-h-screen bg-background">
+            {/* 1. INTRO / ACCESO */}
+            {currentScreen === "access-intro" && (
+                <AccessIntroScreen onContinue={() => goTo("welcome")} />
+            )}
+
+            {/* 2. WELCOME */}
             {currentScreen === "welcome" && (
                 <WelcomeScreen
                     onNavigate={(screen, role) => {
-                        setCurrentScreen(screen);
-                        setUserRole(role);
+                        goTo(screen as Screen, role);
                     }}
                 />
             )}
 
+            {/* 3. LOGIN */}
             {currentScreen === "login" && (
                 <LoginScreen
                     userRole={userRole}
-                    onBack={() => {
-                        setCurrentScreen("welcome");
-                        setUserRole(null);
-                    }}
+                    onBack={() => goTo("welcome", null)}
                     onSuccess={() => {
                         try {
                             const u = getUser();
-                            const uid: string | undefined = u?.id;
-                            if (uid) {
-                                setUserId(uid);
-                                const firstTime = !hasSeenIntro(uid);
-                                setCurrentScreen(firstTime ? "onboarding" : "dashboard");
-                                const r: UserRole =
-                                    u?.role === "DRIVER" ? "driver" : "student";
-                                setUserRole(r);
-                            } else {
-                                setCurrentScreen("dashboard");
-                            }
+                            let role: UserRole = userRole;
+
+                            if (u?.role === "DRIVER") role = "driver";
+                            else if (u?.role) role = "student";
+
+                            setUserRole(role);
+                            goTo("dashboard", role);
                         } catch {
-                            setCurrentScreen("dashboard");
+                            goTo("dashboard");
                         }
                     }}
                 />
             )}
 
+            {/* 4. REGISTER STUDENT */}
             {currentScreen === "register-student" && (
                 <RegisterStudentScreen
-                    onBack={() => {
-                        setCurrentScreen("welcome");
-                        setUserRole(null);
-                    }}
+                    onBack={() => goTo("welcome", null)}
                     onSuccess={() => {
-                        try {
-                            const u = getUser();
-                            const uid: string | undefined = u?.id;
-                            if (uid) {
-                                setUserId(uid);
-                                const firstTime = !hasSeenIntro(uid);
-                                setCurrentScreen(firstTime ? "onboarding" : "dashboard");
-                                setUserRole("student");
-                            } else {
-                                setCurrentScreen("onboarding");
-                            }
-                        } catch {
-                            setCurrentScreen("onboarding");
-                        }
+                        setUserRole("student");
+                        goTo("dashboard", "student");
                     }}
                 />
             )}
 
+            {/* 5. REGISTER DRIVER */}
             {currentScreen === "register-driver" && (
                 <RegisterDriverScreen
-                    onBack={() => {
-                        setCurrentScreen("welcome");
-                        setUserRole(null);
-                    }}
+                    onBack={() => goTo("welcome", null)}
                     onSuccess={() => {
-                        try {
-                            const u = getUser();
-                            const uid: string | undefined = u?.id;
-                            if (uid) {
-                                setUserId(uid);
-                                const firstTime = !hasSeenIntro(uid);
-                                setCurrentScreen(firstTime ? "onboarding" : "dashboard");
-                                setUserRole("driver");
-                            } else {
-                                setCurrentScreen("onboarding");
-                            }
-                        } catch {
-                            setCurrentScreen("onboarding");
-                        }
+                        setUserRole("driver");
+                        goTo("dashboard", "driver");
                     }}
                 />
             )}
 
-            {currentScreen === "onboarding" && (
-                <OnboardingVideoScreen
-                    onComplete={() => {
-                        if (userId) markIntroSeen(userId);
-                        setCurrentScreen("dashboard");
-                    }}
-                />
-            )}
-
+            {/* 6. DASHBOARD */}
             {currentScreen === "dashboard" && (
                 <DashboardScreen userRole={userRole} />
             )}

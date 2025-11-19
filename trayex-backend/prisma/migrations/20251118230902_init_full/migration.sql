@@ -2,10 +2,13 @@
 CREATE TYPE "Role" AS ENUM ('STUDENT', 'MONITOR', 'OPS', 'DRIVER', 'ADMIN');
 
 -- CreateEnum
-CREATE TYPE "ReservationStatus" AS ENUM ('PENDING', 'CONFIRMED', 'BOARDED', 'CANCELLED', 'NO_SHOW');
+CREATE TYPE "ReservationStatus" AS ENUM ('PENDING', 'CONFIRMED', 'BOARDED', 'CANCELLED', 'COMPLETED', 'NO_SHOW');
 
 -- CreateEnum
 CREATE TYPE "FareType" AS ENUM ('UNIT', 'DAY', 'WEEK');
+
+-- CreateEnum
+CREATE TYPE "RouteStatus" AS ENUM ('ACTIVE', 'SAFE', 'INCIDENT');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -20,12 +23,29 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "PasswordCredential" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PasswordCredential_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "StudentProfile" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "universityId" TEXT,
     "studentId" TEXT,
     "qrToken" TEXT,
+    "fullname" TEXT,
+    "bloodType" TEXT,
+    "idNumber" TEXT,
+    "university" TEXT,
+    "emergencyName" TEXT,
+    "emergencyContact" TEXT,
 
     CONSTRAINT "StudentProfile_pkey" PRIMARY KEY ("id")
 );
@@ -35,7 +55,7 @@ CREATE TABLE "Zone" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "polygon" JSONB NOT NULL,
-    "serviceHours" TEXT,
+    "serviceHours" TEXT NOT NULL,
 
     CONSTRAINT "Zone_pkey" PRIMARY KEY ("id")
 );
@@ -105,11 +125,12 @@ CREATE TABLE "Reservation" (
     "userId" TEXT NOT NULL,
     "timeslotId" TEXT NOT NULL,
     "stopId" TEXT NOT NULL,
-    "status" "ReservationStatus" NOT NULL DEFAULT 'PENDING',
-    "qrCode" TEXT,
-    "offlineToken" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "tripId" TEXT,
+    "status" "ReservationStatus" NOT NULL DEFAULT 'PENDING',
+    "etaMinutes" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "offlineToken" TEXT,
+    "routeId" TEXT,
 
     CONSTRAINT "Reservation_pkey" PRIMARY KEY ("id")
 );
@@ -204,6 +225,19 @@ CREATE TABLE "AuditLog" (
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Route" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "mainStops" JSONB,
+    "status" "RouteStatus" NOT NULL DEFAULT 'ACTIVE',
+    "capacity" INTEGER NOT NULL DEFAULT 40,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Route_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -211,10 +245,31 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PasswordCredential_userId_key" ON "PasswordCredential"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "StudentProfile_userId_key" ON "StudentProfile"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Zone_name_key" ON "Zone"("name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Vehicle_plate_key" ON "Vehicle"("plate");
+
+-- CreateIndex
+CREATE INDEX "Reservation_userId_idx" ON "Reservation"("userId");
+
+-- CreateIndex
+CREATE INDEX "Reservation_timeslotId_idx" ON "Reservation"("timeslotId");
+
+-- CreateIndex
+CREATE INDEX "Reservation_stopId_idx" ON "Reservation"("stopId");
+
+-- CreateIndex
+CREATE INDEX "Reservation_tripId_idx" ON "Reservation"("tripId");
+
+-- AddForeignKey
+ALTER TABLE "PasswordCredential" ADD CONSTRAINT "PasswordCredential_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "StudentProfile" ADD CONSTRAINT "StudentProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -245,6 +300,9 @@ ALTER TABLE "Reservation" ADD CONSTRAINT "Reservation_stopId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "Reservation" ADD CONSTRAINT "Reservation_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "Trip"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Reservation" ADD CONSTRAINT "Reservation_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "Route"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SOSIncident" ADD CONSTRAINT "SOSIncident_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

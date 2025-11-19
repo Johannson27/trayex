@@ -281,9 +281,12 @@ export function RegisterStudentScreen({
                           updateField("bloodType", value)
                         }
                       >
-                        <SelectTrigger className="pl-11 h-11 rounded-2xl border border-slate-200 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A] text-sm">
+                        <SelectTrigger
+                          className="pl-11 h-11 rounded-2xl border border-slate-200 text-slate-700 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A]"
+                        >
                           <SelectValue placeholder="Selecciona tu tipo de sangre" />
                         </SelectTrigger>
+
                         <SelectContent>
                           <SelectItem value="A+">A+</SelectItem>
                           <SelectItem value="A-">A-</SelectItem>
@@ -336,9 +339,15 @@ export function RegisterStudentScreen({
                           updateField("university", value)
                         }
                       >
-                        <SelectTrigger className="pl-11 h-11 rounded-2xl border border-slate-200 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A] text-sm">
-                          <SelectValue placeholder="Selecciona tu universidad" />
+                        <SelectTrigger
+                          className="pl-11 h-11 rounded-2xl border border-slate-200 text-slate-700 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A]"
+                        >
+                          <SelectValue
+                            placeholder="Selecciona tu universidad"
+                            className="truncate"
+                          />
                         </SelectTrigger>
+
                         <SelectContent className="max-h-64">
                           {UNIVERSITIES_NI.map((u) => (
                             <SelectItem key={u} value={u}>

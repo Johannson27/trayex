@@ -1,0 +1,30 @@
+[
+    {
+        "id": "uam",
+        "name": "UAM - Universidad Americana",
+        "placeId": "",
+        "lat": 0,
+        "lng": 0
+    },
+    {
+        "id": "unan",
+        "name": "UNAN Managua",
+        "placeId": "",
+        "lat": 0,
+        "lng": 0
+    },
+    {
+        "id": "uni",
+        "name": "UNI - Universidad Nacional de Ingeniería",
+        "placeId": "",
+        "lat": 0,
+        "lng": 0
+    },
+    {
+        "id": "upoli",
+        "name": "UPOLI",
+        "placeId": "",
+        "lat": 0,
+        "lng": 0
+    }
+]

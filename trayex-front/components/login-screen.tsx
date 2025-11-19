@@ -7,14 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Bus, Mail, Lock } from "lucide-react";
-import type { UserRole } from "@/types";
-
 import { login, getMe } from "@/lib/api";
 import { saveToken, saveUser } from "@/lib/session";
 import { useRouter } from "next/navigation";
 
 interface LoginScreenProps {
-  userRole: UserRole;
+  userRole: "student" | "driver" | "staff";
   onBack: () => void;
   onSuccess?: () => void;
 }
@@ -25,7 +23,6 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -51,28 +48,27 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
     e.preventDefault();
     setErr(null);
 
-    const emailTrim = email.trim();
-    if (!emailTrim) return setErr("Ingresa tu email");
+    if (!email.trim()) return setErr("Ingresa tu email");
     if (password.length < 8)
       return setErr("La contraseña debe tener al menos 8 caracteres");
 
     setLoading(true);
+
     try {
-      const { token, user } = await login(emailTrim, password);
+      const { token, user } = await login(email.trim(), password);
       saveToken(token);
 
       try {
         const me = await getMe();
-        saveUser(me?.user ?? user ?? {});
+        saveUser(me.user ?? user ?? {});
       } catch {
         saveUser(user ?? {});
       }
 
-      if (rememberMe) localStorage.setItem("remember_email", emailTrim);
+      if (rememberMe) localStorage.setItem("remember_email", email.trim());
       else localStorage.removeItem("remember_email");
-
       if (onSuccess) onSuccess();
-      else router.replace("/dashboard");
+
     } catch (e: any) {
       const msg = e?.message ?? "Error al iniciar sesión";
       if (msg.toLowerCase().includes("credenciales"))
@@ -85,7 +81,6 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
-      {/* Fondo a pantalla completa (puedes cambiar a otro bg si luego exportas uno específico) */}
       <Image
         src="/assets/bg-welcome.jpg"
         alt="Fondo login Trayex"
@@ -94,11 +89,11 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
         className="object-cover"
       />
 
-      {/* Capa oscurecedora suave por si la foto está muy viva */}
-      <div className="absolute inset-0 bg-[#020617]/40" />
+      <div className="absolute inset-0 bg-black/40" />
 
-      {/* Contenido */}
+      {/* contenido */}
       <div className="relative z-10 min-h-screen flex flex-col px-6 pt-10 pb-8 max-w-md mx-auto">
+
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
           <button
@@ -120,79 +115,66 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
 
         {/* Título */}
         <div className="mb-4">
-          <h1 className="text-2xl font-semibold text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)]">
+          <h1 className="text-2xl font-semibold text-white drop-shadow">
             ¡Bienvenido de vuelta!
           </h1>
           <p className="mt-1 text-sm text-white/85">{subtitle}</p>
         </div>
 
-        {/* Tarjeta del formulario */}
+        {/* Card formulario */}
         <div className="mt-2 flex-1">
-          <div className="bg-white/95 rounded-[24px] px-5 py-6 shadow-[0_18px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm">
-            <form onSubmit={handleLogin} className="space-y-5">
+          <div className="bg-white/95 rounded-[24px] px-5 py-6 shadow-2xl backdrop-blur-sm">
+            <form onSubmit={handleLogin} className="space-y-6">
+
+              {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-slate-800">
-                  {userRole === "student"
-                    ? "Correo institucional o número de estudiante"
-                    : "Correo o teléfono"}
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                  Correo
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <Input
                     id="email"
                     type="text"
-                    placeholder={
-                      userRole === "student"
-                        ? "estudiante@universidad.edu"
-                        : "correo@ejemplo.com"
-                    }
                     value={email}
+                    placeholder="correo@ejemplo.com"
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-11 h-12 rounded-2xl border border-slate-200 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A] text-sm"
-                    autoComplete="email"
+                    className="pl-11 h-12 rounded-2xl text-slate-900"
                   />
                 </div>
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-slate-800">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700">
                   Contraseña
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
                     value={password}
+                    placeholder="••••••••"
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-11 h-12 rounded-2xl border border-slate-200 focus-visible:ring-[#F6A33A]/60 focus-visible:border-[#F6A33A] text-sm"
-                    autoComplete="current-password"
-                    minLength={8}
+                    className="pl-11 h-12 rounded-2xl text-slate-900"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="remember"
                     checked={rememberMe}
-                    onCheckedChange={(checked) =>
-                      setRememberMe(checked as boolean)
-                    }
+                    onCheckedChange={(c) => setRememberMe(Boolean(c))}
                   />
-                  <Label
-                    htmlFor="remember"
-                    className="text-sm cursor-pointer text-slate-700"
-                  >
+                  <Label htmlFor="remember" className="text-sm text-slate-700">
                     Recordar correo
                   </Label>
                 </div>
-                <button
-                  type="button"
-                  className="text-xs text-[#F27C3A] font-medium hover:underline"
-                >
+
+                <button className="text-xs text-orange-500 hover:underline">
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
@@ -205,31 +187,20 @@ export function LoginScreen({ userRole, onBack, onSuccess }: LoginScreenProps) {
 
               <Button
                 type="submit"
-                size="lg"
-                className="w-full h-11 rounded-full text-sm font-semibold shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-all duration-200 hover:brightness-110 hover:translate-y-[1px] active:translate-y-[2px]"
+                disabled={loading}
+                className="w-full h-11 rounded-full font-semibold text-sm shadow-xl"
                 style={{
                   background:
                     "linear-gradient(90deg, #FFC933 0%, #F6A33A 50%, #F27C3A 100%)",
                 }}
-                disabled={loading}
               >
                 {loading ? "Ingresando..." : "Iniciar sesión"}
               </Button>
+
             </form>
           </div>
         </div>
 
-        {/* Pie */}
-        <footer className="mt-4 text-center text-[12px] text-white/85">
-          ¿Aún no tienes cuenta?{" "}
-          <button
-            type="button"
-            className="underline underline-offset-2 font-semibold"
-            onClick={onBack}
-          >
-            Crear una cuenta
-          </button>
-        </footer>
       </div>
     </div>
   );

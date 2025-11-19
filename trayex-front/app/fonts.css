@@ -1,0 +1,10 @@
+@font-face {
+    font-family: 'Azonix';
+    src: url('/Azonix.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    font-family: 'Azonix', sans-serif !important;
+}

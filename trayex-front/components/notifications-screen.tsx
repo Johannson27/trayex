@@ -1,75 +1,89 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Bell, RefreshCw, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { useEffect, useState } from "react";
+import { Bell, RefreshCw, Check } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion"
+
+import {
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationAsRead,
+} from "@/lib/api-notifications";
+import { getToken } from "@/lib/session";
 
 interface NotificationItem {
-  id: string
-  title: string
-  description: string
-  read: boolean
+  id: string;
+  title: string;
+  body: string;
+  channel: string;
+  sentAt: string;
+  read: boolean;
 }
 
 interface NotificationsScreenProps {
-  onUpdateUnreadCount?: (count: number) => void
+  onUpdateUnreadCount?: (count: number) => void;
 }
 
-export function NotificationsScreen({
-  onUpdateUnreadCount,
-}: NotificationsScreenProps) {
-  // 🔔 NOTIFICACIONES DE EJEMPLO (luego las cambias por las reales)
-  const [items, setItems] = useState<NotificationItem[]>([
-    {
-      id: "1",
-      title: "Tu ruta está por llegar!",
-      description: "Toca para ver más detalles",
-      read: false,
-    },
-    {
-      id: "2",
-      title: "Saldo bajo: Recargar",
-      description: "Toca para ver más detalles",
-      read: false,
-    },
-    {
-      id: "3",
-      title: "Cambio de ruta 28/10!",
-      description: "Toca para ver más detalles",
-      read: false,
-    },
-    {
-      id: "4",
-      title: "Advertencia de seguridad!",
-      description: "Toca para ver más detalles",
-      read: false,
-    },
-  ])
+export function NotificationsScreen({ onUpdateUnreadCount }: NotificationsScreenProps) {
+  const token = getToken();
+  const [items, setItems] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Avisar al Dashboard cuántas no leídas hay
+  // ======================
+  // CARGAR NOTIFICACIONES REALES
+  // ======================
+  const loadNotifications = async () => {
+    if (!token) return;
+    setLoading(true);
+
+    try {
+      const { notifications } = await fetchNotifications(token);
+      setItems(notifications);
+    } catch (e) {
+      console.error("Error cargando notificaciones:", e);
+    }
+
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const unread = items.filter((n) => !n.read).length
-    onUpdateUnreadCount?.(unread)
-  }, [items, onUpdateUnreadCount])
+    loadNotifications();
+  }, []);
 
-  const handleReload = () => {
-    // Aquí luego metes la lógica real de recarga
-    // por ahora solo simulo que “refresca” manteniendo la lista
-    console.log("Recargar notificaciones (TODO lógica real)")
-  }
+  // Actualizar contador de no leídas
+  useEffect(() => {
+    const unread = items.filter((n) => !n.read).length;
+    onUpdateUnreadCount?.(unread);
+  }, [items]);
 
-  const handleMarkAll = () => {
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
-
-  const handleOpenNotification = (id: string) => {
-    // Aquí después puedes abrir un detalle, navegar, etc.
-    // Por ahora solo la marcamos como leída.
+  // ======================
+  // MARCAR UNA
+  // ======================
+  const handleOpenNotification = async (id: string) => {
     setItems((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    )
-  }
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+
+    try {
+      await markNotificationAsRead(id, token!);
+    } catch (e) {
+      console.log("Error marcando como leída", e);
+    }
+  };
+
+  // ======================
+  // MARCAR TODAS
+  // ======================
+  const handleMarkAll = async () => {
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+
+    try {
+      await markAllNotificationsRead(token!);
+    } catch (e) {
+      console.log("Error marcando todas:", e);
+    }
+  };
 
   return (
     <div className="relative z-10 min-h-[calc(100vh-80px)] flex flex-col">
@@ -80,13 +94,29 @@ export function NotificationsScreen({
           <h1 className="text-xl font-semibold">Avisos</h1>
         </div>
 
+        {/* BOTÓN DE ACTIVAR NOTIFICACIONES */}
+        <button
+          type="button"
+          onClick={async () => {
+            const perm = await Notification.requestPermission();
+            if (perm === "granted") {
+              alert("Notificaciones activadas 😊");
+            } else {
+              alert("Debes permitir notificaciones para recibir avisos.");
+            }
+          }}
+          className="w-full h-9 rounded-full bg-blue-600 text-white shadow-sm flex items-center justify-center gap-2 text-sm font-medium mb-3"
+        >
+          Activar notificaciones 🔔
+        </button>
+
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={handleReload}
+            onClick={loadNotifications}
             className="flex-1 h-9 rounded-full bg-white/90 shadow-sm border border-white/40 flex items-center justify-center gap-2 text-sm font-medium"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Recargar
           </button>
 
@@ -101,11 +131,14 @@ export function NotificationsScreen({
         </div>
       </header>
 
-      {/* LISTA DE TARJETAS */}
+
+      {/* LISTA */}
       <main className="px-5 pb-6 flex-1">
         {items.length === 0 ? (
           <div className="h-full flex items-start justify-center pt-10">
-            <p className="text-sm text-white/80">No tienes avisos.</p>
+            <p className="text-sm text-white/80">
+              {loading ? "Cargando..." : "No tienes avisos."}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -124,8 +157,9 @@ export function NotificationsScreen({
                     >
                       {n.title}
                     </span>
+
                     <span className="text-[11px] text-slate-500 mt-0.5">
-                      {n.description}
+                      {n.body}
                     </span>
                   </div>
                 </Card>
@@ -135,5 +169,5 @@ export function NotificationsScreen({
         )}
       </main>
     </div>
-  )
+  );
 }

@@ -7,18 +7,60 @@ generator client {
   provider = "prisma-client-js"
 }
 
+//
+// ENUMS
+//
+enum Role {
+  STUDENT
+  MONITOR
+  OPS
+  DRIVER
+  ADMIN
+  USER // 👈 agregado porque tu modelo User lo usa como default
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  BOARDED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum FareType {
+  UNIT
+  DAY
+  WEEK
+}
+
+enum RouteStatus {
+  ACTIVE
+  SAFE
+  INCIDENT
+}
+
+//
+// MODELS
+//
+
 model User {
-  id               String              @id @default(cuid())
-  createdAt        DateTime            @default(now())
-  email            String?             @unique
-  phone            String?             @unique
-  role             Role                @default(STUDENT)
-  student          StudentProfile?
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  email            String?  @unique
+  phone            String?  @unique
+  role             Role     @default(STUDENT)
+  balance          Int      @default(100)
   emergencyContact String?
-  reservations     Reservation[]
-  ratings          Rating[]
-  sosIncidents     SOSIncident[]
-  credential       PasswordCredential?
+
+  student      StudentProfile?
+  reservations Reservation[]
+  ratings      Rating[]
+  sosIncidents SOSIncident[]
+  credential   PasswordCredential?
+
+  // 👇 relación agregada
+  pushSubscriptions PushSubscription[]
 }
 
 model PasswordCredential {
@@ -37,7 +79,7 @@ model StudentProfile {
   universityId     String?
   studentId        String?
   qrToken          String?
-  fullName         String? @map("fullname")
+  fullName         String?
   bloodType        String?
   idNumber         String?
   university       String?
@@ -45,17 +87,19 @@ model StudentProfile {
   emergencyContact String?
 }
 
-enum Role {
-  STUDENT
-  MONITOR
-  OPS
-  DRIVER
-  ADMIN
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 model Zone {
-  id           String   @id @default(cuid())
-  name         String   @unique
+  id           String     @id @default(cuid())
+  name         String     @unique
   polygon      Json
   serviceHours String
   stops        Stop[]
@@ -132,8 +176,8 @@ model Reservation {
   timeslot Timeslot @relation(fields: [timeslotId], references: [id])
   stop     Stop     @relation(fields: [stopId], references: [id])
   trip     Trip?    @relation(fields: [tripId], references: [id])
-  Route    Route?   @relation(fields: [routeId], references: [id])
   routeId  String?
+  Route    Route?   @relation(fields: [routeId], references: [id])
 
   @@index([userId])
   @@index([timeslotId])
@@ -141,26 +185,11 @@ model Reservation {
   @@index([tripId])
 }
 
-enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  BOARDED
-  CANCELLED
-  COMPLETED
-  NO_SHOW
-}
-
 model FarePolicy {
   id              String   @id @default(cuid())
   type            FareType
   priceMinorUnits Int
   currency        String   @default("NIO")
-}
-
-enum FareType {
-  UNIT
-  DAY
-  WEEK
 }
 
 model BestFareLedger {
@@ -227,17 +256,10 @@ model AuditLog {
   createdAt DateTime @default(now())
 }
 
-enum RouteStatus {
-  ACTIVE
-  SAFE
-  INCIDENT
-}
-
 model Route {
   id          String      @id @default(cuid())
   name        String
   description String?
-  // Usamos Json para paradas principales (compatible con SQLite y Postgres)
   mainStops   Json?
   status      RouteStatus @default(ACTIVE)
   capacity    Int         @default(40)

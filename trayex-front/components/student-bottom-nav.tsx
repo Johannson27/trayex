@@ -9,30 +9,40 @@ interface StudentBottomNavProps {
     onChange: (tab: TabId) => void;
 }
 
-const TABS: { id: TabId; icon: string; label: string }[] = [
-    { id: "home", icon: "/assets/home.svg", label: "Inicio" },
-    { id: "bus", icon: "/assets/bus.svg", label: "Rutas" },
-    { id: "money", icon: "/assets/money.svg", label: "Tarifas" },
-    { id: "ticket", icon: "/assets/ticket.svg", label: "Pases" },
-    { id: "bell", icon: "/assets/bell.svg", label: "Alertas" },
-    { id: "user", icon: "/assets/user.svg", label: "Perfil" },
-];
+const TABS: {
+    id: TabId;
+    icon: string;
+    label: string;
+    customWidth?: number;
+    customHeight?: number;
+}[] = [
+        { id: "home", icon: "/assets/home.svg", label: "Inicio" },
+        { id: "bus", icon: "/assets/bus.svg", label: "Rutas" },
+
+        // ⭐ Aquí podés modificar el tamaño individual del icono de TARIFAS
+        {
+            id: "money",
+            icon: "/assets/money.svg",
+            label: "Tarifas",
+            customWidth: 18,      // <--- CAMBIALO A TU GUSTO
+            customHeight: 5      // <--- CAMBIALO A TU GUSTO
+        },
+
+        { id: "ticket", icon: "/assets/ticket.svg", label: "Pases" },
+        { id: "bell", icon: "/assets/bell.svg", label: "Alertas" },
+        { id: "user", icon: "/assets/user.svg", label: "Perfil" },
+    ];
 
 export function StudentBottomNav({ active, onChange }: StudentBottomNavProps) {
     return (
         <div className="fixed inset-x-0 bottom-0 flex justify-center pointer-events-none z-50">
-            <div className="relative w-full max-w-md h-20">
-                <Image
-                    src="/assets/nav-bg.svg"
-                    alt="Barra de navegación"
-                    fill
-                    priority
-                    className="pointer-events-none select-none"
-                />
+            <div className="relative w-full max-w-md h-16">
+                <div className="absolute inset-0 bg-white/95 shadow-[0_-6px_20px_rgba(0,0,0,0.12)] rounded-t-2xl"></div>
 
-                <div className="absolute inset-0 flex items-center justify-between px-7 pointer-events-auto">
+                <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-auto">
                     {TABS.map((tab) => {
                         const isActive = tab.id === active;
+
                         return (
                             <button
                                 key={tab.id}
@@ -42,10 +52,9 @@ export function StudentBottomNav({ active, onChange }: StudentBottomNavProps) {
                                 <Image
                                     src={tab.icon}
                                     alt={tab.label}
-                                    width={24}
-                                    height={24}
-                                    className={`transition-all ${isActive ? "scale-110 opacity-100" : "opacity-60"
-                                        }`}
+                                    width={tab.customWidth ?? 22}
+                                    height={tab.customHeight ?? 22}
+                                    className={`transition-all ${isActive ? "scale-110 opacity-100" : "opacity-50"}`}
                                 />
                                 <span
                                     className={`transition-all ${isActive ? "text-blue-600" : "text-slate-400"

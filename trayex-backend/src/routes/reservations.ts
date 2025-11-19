@@ -1,57 +1,82 @@
-// src/routes/reservations.ts
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { requireAuth } from "./auth";
 import { signQr } from "../services/jwt";
-import { ReservationStatus } from "@prisma/client";
 
 export const reservationRouter = Router();
 
-/** Crear reserva real (timeslot + stop) */
+/**
+ * 🚀 Crear reserva
+ */
 reservationRouter.post("/reservations", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).auth.sub as string;
     const { timeslotId, stopId } = req.body ?? {};
+
     if (!timeslotId || !stopId) {
       return res.status(400).json({ error: "timeslotId y stopId son requeridos" });
     }
 
-    // Validar existencia
+    // 1️⃣ Obtener datos del usuario
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { balance: true },
+    });
+
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    // 2️⃣ Validar saldo
+    if (user.balance < 20) {
+      return res.status(400).json({ error: "Saldo insuficiente" });
+    }
+
+    // 3️⃣ Validar timeslot
     const timeslot = await prisma.timeslot.findUnique({
       where: { id: timeslotId },
-      select: { id: true, zoneId: true, capacity: true, startAt: true, endAt: true },
+      select: { id: true, zoneId: true, capacity: true },
     });
+
+    if (!timeslot) {
+      return res.status(404).json({ error: "Timeslot no encontrado" });
+    }
+
+    // 4️⃣ Validar stop
     const stop = await prisma.stop.findUnique({
       where: { id: stopId },
-      select: { id: true, name: true, zoneId: true },
+      select: { id: true, zoneId: true },
     });
 
-    if (!timeslot || !stop) {
-      return res.status(404).json({ error: "Timeslot o Stop no encontrado" });
+    if (!stop) {
+      return res.status(404).json({ error: "Parada no encontrada" });
     }
-    // Deben pertenecer a la misma zona (regla de negocio básica)
+
+    // 5️⃣ Validar que ambos sean de la misma zona
     if (timeslot.zoneId !== stop.zoneId) {
-      return res.status(400).json({ error: "El timeslot y la parada deben pertenecer a la misma zona" });
+      return res.status(400).json({ error: "Timeslot y parada deben ser de la misma zona" });
     }
 
-    // Capacidad: contar reservas activas (PENDING/CONFIRMED)
+    // 6️⃣ Validar capacidad
     const activeCount = await prisma.reservation.count({
-      where: { timeslotId, status: { in: [ReservationStatus.PENDING, ReservationStatus.CONFIRMED] } },
+      where: {
+        timeslotId,
+        status: { in: ["PENDING", "CONFIRMED"] },
+      },
     });
+
     if (activeCount >= timeslot.capacity) {
       return res.status(409).json({ error: "Capacidad llena" });
     }
 
-    // QR offline (firma por 60 min -> 3600 segundos)
-    const qrPayload = { uid: userId, ts: timeslotId, st: stopId };
-    const offlineToken = signQr(qrPayload, 60 * 60);
+    // 7️⃣ Crear QR offline
+    const offlineToken = signQr({ uid: userId, ts: timeslotId, st: stopId }, 3600);
 
+    // 8️⃣ Crear la reserva
     const reservation = await prisma.reservation.create({
       data: {
         userId,
         timeslotId,
         stopId,
-        status: ReservationStatus.CONFIRMED, // o PENDING si quieres flujo de pago
+        status: "CONFIRMED",
         offlineToken,
       },
       select: {
@@ -64,21 +89,30 @@ reservationRouter.post("/reservations", requireAuth, async (req, res) => {
             id: true,
             startAt: true,
             endAt: true,
-            zoneId: true,
             zone: { select: { name: true } },
           },
         },
-        stop: { select: { id: true, name: true } },
+        stop: {
+          select: { id: true, name: true },
+        },
       },
+    });
+
+    // 9️⃣ Restar saldo al usuario
+    await prisma.user.update({
+      where: { id: userId },
+      data: { balance: { decrement: 20 } },
     });
 
     return res.status(201).json({ reservation });
   } catch (e: any) {
-    return res.status(400).json({ error: e?.message ?? "No se pudo crear la reserva" });
+    return res.status(500).json({ error: e?.message ?? "No se pudo crear la reserva" });
   }
 });
 
-/** Mis reservas (hoy en adelante) */
+/**
+ * 📌 Obtener mis reservas futuras
+ */
 reservationRouter.get("/me/reservations", requireAuth, async (req, res) => {
   const userId = (req as any).auth.sub as string;
   const now = new Date();
@@ -92,7 +126,12 @@ reservationRouter.get("/me/reservations", requireAuth, async (req, res) => {
       offlineToken: true,
       createdAt: true,
       timeslot: {
-        select: { id: true, startAt: true, endAt: true, zoneId: true, zone: { select: { name: true } } },
+        select: {
+          id: true,
+          startAt: true,
+          endAt: true,
+          zone: { select: { name: true } },
+        },
       },
       stop: { select: { id: true, name: true } },
     },
@@ -101,25 +140,26 @@ reservationRouter.get("/me/reservations", requireAuth, async (req, res) => {
   return res.json({ reservations });
 });
 
-/** Cancelar reserva (propia) */
+/**
+ * ❌ Cancelar reserva
+ */
 reservationRouter.post("/reservations/:id/cancel", requireAuth, async (req, res) => {
   const userId = (req as any).auth.sub as string;
   const { id } = req.params;
 
   const r = await prisma.reservation.findUnique({ where: { id } });
-  if (!r || r.userId !== userId) return res.status(404).json({ error: "Reserva no encontrada" });
 
-  if (
-    r.status === ReservationStatus.CANCELLED ||
-    r.status === ReservationStatus.NO_SHOW ||
-    r.status === ReservationStatus.BOARDED
-  ) {
+  if (!r || r.userId !== userId) {
+    return res.status(404).json({ error: "Reserva no encontrada" });
+  }
+
+  if (["CANCELLED", "NO_SHOW", "BOARDED"].includes(r.status)) {
     return res.status(400).json({ error: "No se puede cancelar esta reserva" });
   }
 
   const updated = await prisma.reservation.update({
     where: { id },
-    data: { status: ReservationStatus.CANCELLED },
+    data: { status: "CANCELLED" },
   });
 
   return res.json({ ok: true, reservation: updated });

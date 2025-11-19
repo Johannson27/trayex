@@ -12,7 +12,7 @@ import { saveToken, saveUser } from "@/lib/session";
 import { useRouter } from "next/navigation";
 
 interface LoginScreenProps {
-  userRole: "student" | "driver" | "staff";
+  userRole: "student" | "driver" | "staff" | null;
   onBack: () => void;
   onSuccess?: () => void;
 }

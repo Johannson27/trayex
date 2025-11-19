@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
-import type { Screen, UserRole } from "@/app/app/page"
+import type { Screen, UserRole } from "@/types"
 
 interface WelcomeScreenProps {
   onNavigate: (screen: Screen, role: UserRole) => void

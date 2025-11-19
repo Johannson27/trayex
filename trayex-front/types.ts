@@ -1,6 +1,7 @@
 // src/types.ts
 
 // --- Pantallas / rol ---
+
 export type Screen =
     | "welcome"
     | "login"
@@ -9,7 +10,8 @@ export type Screen =
     | "onboarding"
     | "dashboard";
 
-export type UserRole = "student" | "driver" | null;
+export type UserRole = "student" | "driver" | "staff" | null;
+
 
 // --- Estados de reserva (UI) ---
 export type ReservationStatus =

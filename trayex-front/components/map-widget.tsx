@@ -28,7 +28,7 @@ export function MapWidget({
     destination = null,
     stopsOnPath = [],
 }: MapWidgetProps) {
-    const mapRef = useRef<google.maps.Map | null>(null);
+    const mapRef = useRef<any>(null);
     const [ready, setReady] = useState(false);
 
     const busMarkersRef = useRef<google.maps.Marker[]>([]);

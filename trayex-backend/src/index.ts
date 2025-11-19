@@ -4,8 +4,8 @@ import cors from "cors";
 import morgan from "morgan";
 import { prisma } from "./prisma";
 import { pushRouter } from "./routes/push";
-import authRouter from "./routes/auth"; 
-import  passRouter  from "./routes/pass";            // <= FALTABAAAA
+import authRouter from "./routes/auth";
+import passRouter from "./routes/pass";            // <= FALTABAAAA
 import { reservationRouter } from "./routes/reservations";
 import routesRouter from "./routes/routes";
 import { zonesRouter } from "./routes/zones";
@@ -54,3 +54,7 @@ const shutdown = async () => {
 };
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+
+app.get("/ping", (req, res) => {
+  res.json({ ok: true, message: "Servidor funcionando!" });
+});

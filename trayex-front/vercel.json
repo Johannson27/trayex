@@ -9,12 +9,5 @@
                 }
             ]
         }
-    ],
-    "crons": [
-        {
-            "path": "/api/keep-alive",
-            "schedule": "*/5 * * * *"
-            
-        }
     ]
 }

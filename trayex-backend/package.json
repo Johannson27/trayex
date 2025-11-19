@@ -8,7 +8,7 @@
     "seed": "ts-node prisma/seed.ts",
     "prisma:studio": "prisma studio",
     "build": "tsc -p tsconfig.json",
-    "start": "prisma migrate deploy && node dist/server.js",
+    "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",

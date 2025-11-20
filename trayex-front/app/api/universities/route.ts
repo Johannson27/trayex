@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 const PLACES_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 export async function GET(req: Request) {
+    console.log("PLACES_API_KEY:", PLACES_API_KEY);
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query");
 

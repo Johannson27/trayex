@@ -4,13 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Search } from "lucide-react";
 
-// 💡 CAMBIO 1: Importar los datos de las paradas directamente.
-// NOTA: Si este archivo (RoutesScreen.tsx) está en 'app/components' o similar, 
-// es posible que tengas que ajustar la ruta relativa '../raw/managua-stops.json' 
-// o usar un alias (si está configurado).
-import stopsData from '../raw/managua-stops.json'; // Asumiendo que esta es la ruta correcta desde aquí.
-
-
 interface University {
   placeId: string;
   name: string;
@@ -36,19 +29,14 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
   const [selected, setSelected] = useState<University | null>(null);
   const [search, setSearch] = useState("");
 
-  // Los stops ya no se cargan aquí, se usan del import (stopsData)
   const [stops, setStops] = useState<Stop[]>([]);
 
-  // 💡 CAMBIO 2: ELIMINAR EL FETCH.
   // 🟦 1. CARGAR PARADAS
-  // Ya no es necesario hacer fetch, ya que los datos se importan.
-  /*
-    useEffect(() => {
-      fetch("/managua-stops.json")
-        .then((res) => res.json())
-        .then((data) => setStops(data));
-    }, []);
-  */
+  useEffect(() => {
+    fetch("/managua-stops.json")
+      .then((res) => res.json())
+      .then((data) => setStops(data));
+  }, []);
 
   // 🟦 2. BÚSQUEDA UNIVERSIDADES
   useEffect(() => {
@@ -63,6 +51,7 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
       setUniversities(json.universities || []);
       setFiltered(json.universities || []);
     }
+
 
     load();
   }, [search]);
@@ -88,22 +77,13 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
     });
   }, []);
 
-  // 💡 CAMBIO 3: Usar la data importada para los markers.
   // 🟦 4. MOSTRAR TODAS LAS PARADAS SIEMPRE
   useEffect(() => {
     if (!mapInstance.current) return;
 
-    function loadStops() {
-      // const res = await fetch("/managua-stops.json"); // ELIMINADO
-      // const stops = await res.json(); // ELIMINADO
-
-      // Se asume que stopsData tiene una estructura similar a GeoJSON que incluye 'features'
-      const stops = stopsData.features?.map((f: any) => ({
-        lat: f.geometry.coordinates[1], // Asumiendo [lon, lat]
-        lng: f.geometry.coordinates[0],
-        name: f.properties.name || "Parada"
-      })) || [];
-
+    async function loadStops() {
+      const res = await fetch("/managua-stops.json");
+      const stops = await res.json();
 
       stops.forEach((stop: any) => {
         new google.maps.Marker({
@@ -144,24 +124,13 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
     });
   }, [selected]);
 
-  // 💡 CAMBIO 4: Usar la data importada para la ruta.
   // 🟦 6. RUTA DESDE PARADA MÁS CERCANA
   useEffect(() => {
     if (!selected || !mapInstance.current) return;
 
-    function draw() {
-      // const res = await fetch("/managua-stops.json"); // ELIMINADO
-      // const stops = await res.json(); // ELIMINADO
-
-      // Usar la data importada:
-      const geoJsonStops = stopsData.features || [];
-
-      // Mapear a formato {lat, lng} para el cálculo de distancia
-      const stops = geoJsonStops.map((f: any) => ({
-        lat: f.geometry.coordinates[1], // Asumiendo [lon, lat]
-        lng: f.geometry.coordinates[0],
-        name: f.properties.name || "Parada"
-      }));
+    async function draw() {
+      const res = await fetch("/managua-stops.json");
+      const stops = await res.json();
 
       // hallar parada más cercana
       let nearest: any = null;

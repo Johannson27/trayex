@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 
 const PLACES_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
+interface University {
+    placeId: string;
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+    photo: string | null;
+}
+
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query")?.trim();
@@ -30,7 +39,7 @@ export async function GET(req: Request) {
                     "places.id,places.displayName,places.formattedAddress,places.location,places.photos",
             },
             body: JSON.stringify({
-                textQuery: query,
+                textQuery: query + " Nicaragua", // Priorizar resultados en Nicaragua
                 languageCode: "es",
                 regionCode: "NI",
             }),
@@ -44,20 +53,22 @@ export async function GET(req: Request) {
 
         const data = await response.json();
 
-        const universities =
-            data.places?.map((place: any) => ({
-                placeId: place.id,
-                name: place.displayName?.text || "",
-                address: place.formattedAddress || "",
-                lat: place.location?.latitude || 0,
-                lng: place.location?.longitude || 0,
-                photo:
-                    place.photos?.[0]?.name
+        const universities: University[] =
+            (data.places || [])
+                .map((place: any) => ({
+                    placeId: place.id,
+                    name: place.displayName?.text || "",
+                    address: place.formattedAddress || "",
+                    lat: place.location?.latitude || 0,
+                    lng: place.location?.longitude || 0,
+                    photo: place.photos?.[0]?.name
                         ? `https://places.googleapis.com/v1/${place.photos[0].name}/media?key=${PLACES_API_KEY}&max_width=800`
                         : null,
-            })) || [];
+                }))
+                // Filtrar solo universidades dentro de Nicaragua
+                .filter((u: University) => u.lat >= 10.7 && u.lat <= 15.0 && u.lng >= -87.7 && u.lng <= -83.0);
 
-        console.log("Found universities:", universities.length);
+        console.log("Found universities in Nicaragua:", universities.length);
 
         return NextResponse.json({ universities });
     } catch (error: any) {

@@ -112,7 +112,6 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
     map.panTo({ lat: selected.lat, lng: selected.lng });
     map.setZoom(17);
 
-    // Remover marker previo
     if ((window as any).__uniMarker) {
       (window as any).__uniMarker.setMap(null);
     }
@@ -177,7 +176,6 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
 
   return (
     <div className="relative w-full max-w-md mx-auto min-h-screen bg-white">
-
       {/* ▪️ Mapa */}
       <div ref={mapRef} className="absolute inset-0 w-full h-full" />
 
@@ -204,7 +202,7 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
               className="bg-white w-full rounded-2xl shadow-md p-3 flex gap-3 items-center"
             >
               <Image
-                src={u.photo || "/assets/dashboard-hero.jpg"} // fallback
+                src="/assets/dashboard-hero.jpg" // siempre esta
                 width={70}
                 height={70}
                 alt="Foto"
@@ -231,7 +229,7 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
           >
             <div className="relative h-40 w-full">
               <Image
-                src={selected.photo || "/assets/dashboard-hero.jpg"} // fallback
+                src="/assets/dashboard-hero.jpg" // siempre esta
                 alt="Foto"
                 fill
                 className="object-cover"

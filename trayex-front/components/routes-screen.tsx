@@ -52,19 +52,22 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
       setFiltered(json.universities || []);
     }
 
-
     load();
   }, [search]);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {
-      localStorage.setItem("currentUserLocation", JSON.stringify({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        name: "Ubicación del usuario"
-      }));
+      localStorage.setItem(
+        "currentUserLocation",
+        JSON.stringify({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          name: "Ubicación del usuario",
+        })
+      );
     });
   }, []);
+
   // 🟦 3. INICIALIZAR MAPA
   useEffect(() => {
     if (!mapRef.current) return;
@@ -132,16 +135,13 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
       const res = await fetch("/managua-stops.json");
       const stops = await res.json();
 
-      // hallar parada más cercana
       let nearest: any = null;
       let minDist = Infinity;
 
       stops.forEach((stop: any) => {
         const d =
-          Math.sqrt(
-            Math.pow(stop.lat - selected!.lat, 2) +
-            Math.pow(stop.lng - selected!.lng, 2)
-          );
+          Math.sqrt(Math.pow(stop.lat - selected!.lat, 2) +
+            Math.pow(stop.lng - selected!.lng, 2));
 
         if (d < minDist) {
           minDist = d;
@@ -151,7 +151,6 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
 
       if (!nearest) return;
 
-      // dibujar ruta
       const directions = new google.maps.DirectionsService();
       const renderer = new google.maps.DirectionsRenderer({
         suppressMarkers: true,
@@ -205,7 +204,7 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
               className="bg-white w-full rounded-2xl shadow-md p-3 flex gap-3 items-center"
             >
               <Image
-                src={u.photo || "/assets/parada.png"}
+                src={u.photo || "/assets/dashboard-hero.jpg"} // fallback
                 width={70}
                 height={70}
                 alt="Foto"
@@ -232,7 +231,7 @@ export function RoutesScreen({ setActiveNav }: { setActiveNav: any }) {
           >
             <div className="relative h-40 w-full">
               <Image
-                src={selected.photo || "/assets/parada.png"}
+                src={selected.photo || "/assets/dashboard-hero.jpg"} // fallback
                 alt="Foto"
                 fill
                 className="object-cover"
